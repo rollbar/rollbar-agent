@@ -8,7 +8,7 @@ import copy
 import hashlib
 import json
 import logging
-import optparse  # for python2.6 compat
+import optparse  # instead of argparse, for python2.6 compat
 import os
 import re
 import shelve
@@ -39,19 +39,61 @@ def parse_timestamp(format, s):
 
 
 def find_filenames(app_config):
-    return ['/Users/brian/www/mox/mox.log']
+    """
+    Returns a list of all the filenames to process from the specified app
+    """
+    filenames = []
+    for target in app_config['targets']:
+        if os.path.isfile(target):
+            if should_process_file(app_config, target):
+                filenames.append(target)
+        elif os.path.isdir(target):
+            for relative_name in os.listdir(target):
+                filename = os.path.join(target, relative_name)
+                if os.path.isfile(filename) and should_process_file(app_config, filename):
+                    filenames.append(filename)
+
+    return filenames
+
+
+def should_process_file(app_config, filename):
+    """
+    Returns True if we should process the specified filename for the specified app
+    """
+    if not os.path.isfile(filename):
+        return False
     
+    if filename in app_config['blacklist']:
+        return False
+
+    if filename in app_config['targets']:
+        return True
+
+    ext = filename.split('.')[-1]
+    if app_config['ext_whitelist']:
+        return ext in app_config['ext_whitelist']
+
+    if ext in app_config['ext_blacklist']:
+        return False
+
+    return True
 
 
 ## processors
 
 def choose_processor(filename):
+    """
+    Returns the Processor subclass that should be used to process the specified file
+    """
     if filename.endswith('.ratchet'):
         return RatchetFileProcessor
     return LogFileProcessor
 
 
 class Processor(object):
+    """
+    Base Processor class
+    """
     def __init__(self, scanner, app):
         self.scanner = scanner
         self.app = app
@@ -174,6 +216,8 @@ class ScannerThread(threading.Thread):
         
         self.apps = {}
         for app_name, app_config in config.iteritems():
+            if app_name == '_global':
+                continue
             self.apps[app_name] = {
                 'name': app_name,
                 'config': app_config,
@@ -202,7 +246,7 @@ class ScannerThread(threading.Thread):
         # we keep state in a dictionary like:
         # {'files': {'filename1': {'pos': 12345, 'inode': 4567}, ...}}
         self.scan_start_time = time.time()
-        state = shelve.open(self.config.default('statefile'))
+        state = shelve.open(self.config['_global']['statefile'])
         apps_state = state.get('apps', {})
 
         for app in self.apps.itervalues():
@@ -268,6 +312,8 @@ def main_loop():
     
     log.info("Shutdown complete")
 
+
+## configuration
 
 def build_option_parser():
     parser = optparse.OptionParser()
@@ -343,6 +389,8 @@ def parse_config(filename):
             
             config[app_name] = app
 
+    config['_global'] = cp.defaults()
+
     return config
 
 
@@ -350,12 +398,14 @@ def validate_config(config):
     errors = []
     required_vars = ['params.access_token', 'targets']
     for app_name, app_config in config.iteritems():
+        if app_name == '_global':
+            continue
         for var_name in required_vars:
             if not app_config.get('params.access_token'):
                 errors.append("app:%s is missing required var %s" % (app_name, var_name))
     if errors:
         print "CONFIGURATION ERRORS"
-        for error in error:
+        for error in errors:
             print error
         print
         sys.exit(1)
@@ -372,8 +422,6 @@ if __name__ == '__main__':
     # validate - will exit if invalid
     validate_config(config)
 
-    # ok!
-    
     # set up logging
     level = logging.INFO
     if options.verbose:

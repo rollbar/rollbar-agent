@@ -45,18 +45,18 @@ Configuration
 -------------
 Configuration options for ratchetd itself are in `ratchetd.conf`. If you're using the init script, it has a few of its own configuration variables inside which control how it runs.
 
-### `ratchetd.conf`
+### ratchetd.conf
 At the bare minimum, you will want to change the following variables:
 
-- params.access_token -- your Ratchet.io access token
-- targets -- white-space-separated list of files or directories (non-recursive) to process.
+- `params.access_token` -- your Ratchet.io access token
+- `targets` -- white-space-separated list of files or directories (non-recursive) to process.
 
 Setting the following variables will enable github integration:
 
-- params.root -- path to your code root
-- params.branch -- the current branch
-- params.github.account -- your github account name
-- params.github.repo -- your github repo name
+- `params.root` -- path to your code root
+- `params.branch` -- the current branch
+- `params.github.account` -- your github account name
+- `params.github.repo` -- your github repo name
 
 Other options are documented in the sample config file.
 

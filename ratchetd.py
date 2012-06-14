@@ -126,8 +126,9 @@ class LogFileProcessor(Processor):
         if self.scanner.scan_start_time - state['mtime'] > 1:
             # it's been at least 1 second since anything was written to the file
             # if there's a pending message, send it
-            self._process_message(current_message, filename)
-            current_message = copy.deepcopy(empty_message)
+            if current_message['data']:
+                self._process_message(current_message, filename)
+                current_message = copy.deepcopy(empty_message)
 
         state['current_message'] = current_message
 

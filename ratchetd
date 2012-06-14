@@ -25,6 +25,18 @@ log = logging.getLogger(__name__)
 
 DEFAULT_ENDPOINT = 'http://submit.ratchet.io/api/item/'
 DEFAULT_TIMEOUT = 3  # in seconds
+        
+LOG_LEVEL = {
+    'notset': 0,
+    'notse': 0,
+    'debug': 10,
+    'info': 20,
+    'warning': 30,
+    'warni': 30,
+    'error': 40,
+    'critical': 50,
+    'criti': 50
+}
 
 
 ## utils
@@ -183,6 +195,14 @@ class LogFileProcessor(Processor):
         state['current_message'] = current_message
 
     def _process_message(self, message, filename):
+        # if the level is below our threshold, ignore it
+        level_string = (message.get('level') or '').lower()
+        level = LOG_LEVEL.get(level_string, 0)
+        min_level = self.app['config']['min_log_level']
+        if level < min_level:
+            log.debug("Skipping message; level: %s min_level: %d", level_string, min_level)
+            return
+
         data = "".join(message['data'])
         log.debug("Processing message. Timestamp: %s Level: %s Title: %s Data: %s",
             message['timestamp'], message['level'], message['title'], data)
@@ -353,13 +373,7 @@ def parse_config(filename):
         return re.split(r'\s+', val)
 
     def to_log_level(val):
-        return {
-            'debug': 10,
-            'info': 20,
-            'warning': 30,
-            'error': 40,
-            'critical': 50
-        }[val.lower()]
+        return LOG_LEVEL[val.lower()]
 
     parsers = {
         'timeout': to_int,

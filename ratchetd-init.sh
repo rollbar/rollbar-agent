@@ -1,4 +1,7 @@
 #!/bin/bash
+# chkconfig: 345 99 01
+# description: ratchetd - watches log files and pushes events to ratchet.io
+
 # Example init.d script for ratchetd
 # Change the configuration variables as needed, then symlink to /etc/init.d/ratchetd
 
@@ -23,7 +26,9 @@ function start() {
     exit 1
   fi
 
-  source $VIRTUALENV/bin/activate
+  if [ "$VIRTUALENV" != "" ]; then
+    source $VIRTUALENV/bin/activate
+  fi
   python -u $PROGRAM $ARGS >> $LOGFILE 2>&1 &
   echo $! > $PIDFILE
 }

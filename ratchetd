@@ -254,13 +254,20 @@ class ScannerThread(threading.Thread):
             }
 
     def run(self):
+        sleep_seconds = self.config['_global']['sleep_time']
         while not self.stop_event.is_set():
             log.info("scanner thread looping...")
+            start_time = time.time()
+
             try:
                 self.scan_all()
             except:
                 log.exception("Caught exception in ScannerThread.run() loop")
-            time.sleep(1)
+            
+            # sleep for at most sleep_seconds seconds.
+            wait_time = (start_time + sleep_seconds) - time.time()
+            if wait_time > 0:
+                self.stop_event.wait(wait_time)
 
     def scan_all(self):
         # we keep state in a dictionary like:
@@ -355,27 +362,25 @@ def build_option_parser():
 
 def parse_config(filename):
     defaults = {
-        'endpoint': DEFAULT_ENDPOINT,
-        'timeout': DEFAULT_TIMEOUT,
-        'root': os.getcwd(),
         'statefile': '/tmp/ratchetd.state',
+        'sleep_time': '10',
+        'endpoint': DEFAULT_ENDPOINT,
+        'timeout': str(DEFAULT_TIMEOUT),
+        'root': os.getcwd(),
         'ext_whitelist': 'log, ratchet',
         'ext_blacklist': '',
-        'max_file_age': 0,
         'targets': '',
         'blacklist': '',
     }
 
     def to_int(val):
         return int(val)
-
     def to_list(val):
         return re.split(r'\s+', val)
-
     def to_log_level(val):
         return LOG_LEVEL[val.lower()]
-
     parsers = {
+        'sleep_time': to_int,
         'timeout': to_int,
         'ext_whitelist': to_list,
         'ext_blacklist': to_list,
@@ -385,7 +390,7 @@ def parse_config(filename):
         'min_log_level': to_log_level,
     }
 
-    cp = ConfigParser.SafeConfigParser()
+    cp = ConfigParser.SafeConfigParser(defaults)
     cp.read([filename])
 
     config = {}
@@ -393,8 +398,7 @@ def parse_config(filename):
         if section_name.startswith('app:'):
             app_name = section_name[len('app:'):]
             app = {'name': app_name}
-            for option_name in cp.options(section_name):
-                raw_value = cp.get(section_name, option_name)
+            for option_name, raw_value in cp.items(section_name):
                 if option_name in parsers:
                     value = parsers[option_name](raw_value)
                 else:
@@ -403,7 +407,14 @@ def parse_config(filename):
             
             config[app_name] = app
 
-    config['_global'] = cp.defaults()
+    global_config = cp.defaults()
+    config['_global'] = {}
+    for option_name, raw_value in global_config.iteritems():
+        if option_name in parsers:
+            value = parsers[option_name](raw_value)
+        else:
+            value = raw_value
+        config['_global'][option_name] = value
 
     return config
 

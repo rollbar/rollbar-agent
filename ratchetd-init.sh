@@ -3,17 +3,11 @@
 # Change the configuration variables as needed, then symlink to /etc/init.d/ratchetd
 
 # ratchet configuration
-ACCESS_TOKEN=
-ENVIRONMENT=
-ROOT=
-BRANCH=
-GITHUB_ACCOUNT=
-GITHUB_REPO=
-TIMEOUT=
+CONFIG_FILE=/etc/ratchetd.conf
 
 # system configuration
-PROGRAM="/var/www/ratchetd/ratchetd.py"
-ARGS="--access_token=$ACCESS_TOKEN --environment=$ENVIRONMENT --root=$ROOT --branch=$BRANCH --github.account=$GITHUB_ACCOUNT --github.repo=$GITHUB_REPO --timeout=$TIMEOUT"
+PROGRAM="/var/www/ratchetd/ratchetd"
+ARGS="--config=$CONFIG_FILE"
 PROGNAME='ratchetd'
 PIDFILE="/var/run/$PROGNAME.pid"
 ALT_PIDFILE="/var/run/$PROGNAME.sh.pid"

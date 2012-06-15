@@ -140,8 +140,9 @@ class RatchetFileProcessor(Processor):
             payload = json.loads(line)
         except ValueError:
             log.warning("Could not process badly formatted line: %s", line)
+            return
 
-        self.send_payload(line)
+        self.send_payload(payload)
 
 
 class LogFileProcessor(Processor):

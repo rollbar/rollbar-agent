@@ -1,2 +1,4 @@
 *.pyc
 *.db
+ratchet_agent.egg-info/
+dist/

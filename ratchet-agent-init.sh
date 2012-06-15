@@ -1,17 +1,17 @@
 #!/bin/bash
 # chkconfig: 345 99 01
-# description: ratchetd - watches log files and pushes events to ratchet.io
+# description: ratchet-agent - watches log files and pushes events to ratchet.io
 
-# Example init.d script for ratchetd
-# Change the configuration variables as needed, then symlink to /etc/init.d/ratchetd
+# Example init.d script for ratchet-agent
+# Change the configuration variables as needed, then symlink to /etc/init.d/ratchet-agent
 
 # ratchet configuration
-CONFIG_FILE=/etc/ratchetd.conf
+CONFIG_FILE=/etc/ratchet-agent.conf
 
 # system configuration
-PROGRAM="/var/www/ratchetd/ratchetd"
+PROGRAM="/var/www/ratchet-agent/ratchet-agent"
 ARGS="--config=$CONFIG_FILE"
-PROGNAME='ratchetd'
+PROGNAME='ratchet-agent'
 PIDFILE="/var/run/$PROGNAME.pid"
 ALT_PIDFILE="/var/run/$PROGNAME.sh.pid"
 LOGFILE="/var/log/$PROGNAME.log"

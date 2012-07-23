@@ -363,7 +363,7 @@ def build_option_parser():
 
 def parse_config(filename):
     defaults = {
-        'statefile': '/tmp/ratchet-agent.state',
+        'statefile': '/var/cache/ratchet-agent.state',
         'sleep_time': '10',
         'endpoint': DEFAULT_ENDPOINT,
         'timeout': str(DEFAULT_TIMEOUT),

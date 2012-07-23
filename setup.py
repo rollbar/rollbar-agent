@@ -11,7 +11,8 @@ except IOError:
 
 setup(
     name='ratchet-agent',
-    version='0.1.3',
+    data_files=[('', ['ratchet-agent', 'ratchet-agent-init.sh', 'ratchet-agent.conf', 'LICENSE', 'requirements.txt'])],
+    version='0.1.11',
     description='Ratchet.io server-side agent',
     long_description=README,
     author='Brian Rue',

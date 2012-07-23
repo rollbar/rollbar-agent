@@ -1,0 +1,4 @@
+include LICENSE
+include README.rst
+include ratchet-agent*
+include requirements.txt

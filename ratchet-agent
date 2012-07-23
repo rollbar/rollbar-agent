@@ -23,7 +23,7 @@ import requests
 
 log = logging.getLogger(__name__)
 
-DEFAULT_ENDPOINT = 'http://submit.ratchet.io/api/item/'
+DEFAULT_ENDPOINT = 'https://submit.ratchet.io/api/item/'
 DEFAULT_TIMEOUT = 3  # in seconds
         
 LOG_LEVEL = {

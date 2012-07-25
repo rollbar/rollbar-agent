@@ -108,7 +108,7 @@ def build_python_log_format_parser(format):
         '%(filename)s': ('filename', r'\S+'),
         '%(funcName)s': ('function_name', python_name),
         '%(levelname)s': ('level', r'[a-zA-Z_]+'),
-        '%(levelname)-5.5s': ('level', r'[a-zA-Z_]+'),
+        '%(levelname)-5.5s': ('level', r'[a-zA-Z_][a-zA-Z_ ]{4}'),
         '%(levelno)d': ('levelno', r'\d+'),
         '%(lineno)d': ('lineno', r'\d+'),
         '%(module)s': ('module_name', python_name),

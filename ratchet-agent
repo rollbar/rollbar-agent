@@ -5,6 +5,7 @@ ratchet-agent: agent to monitor log files and send notices to Ratchet.io
 
 import ConfigParser
 import copy
+import fnmatch
 import hashlib
 import json
 import logging
@@ -23,10 +24,11 @@ import requests
 
 log = logging.getLogger(__name__)
 
-VERSION = '0.1.14'
+VERSION = '0.1.15'
 
 DEFAULT_ENDPOINT = 'https://submit.ratchet.io/api/1/item/'
 DEFAULT_TIMEOUT = 3  # in seconds
+DEFAULT_DATEFMT = '%Y-%m-%d %H:%M:%S,%f'
         
 LOG_LEVEL = {
     'notset': 0,
@@ -93,30 +95,33 @@ def should_process_file(app_config, filename):
     return True
 
 
-def build_python_log_format_parser(format):
+def build_python_log_format_parser(format, datefmt):
     """
     Parses a python log format string, and returns a (regex, strptimeformat) to parse it.
     """
-    time_format = '%Y-%m-%d %H:%M:%S,%f'  # default - TODO make this configurable
+    if not datefmt:
+        datefmt = DEFAULT_DATEFMT
 
     python_name = r'[a-zA-Z_][a-zA-Z0-9_]*'
 
     # dict of key: (match_name, regex_string)
     known_keys = {
-        '%(asctime)s': ('timestamp', time_format_to_regex(time_format)),
+        '%(asctime)s': ('timestamp', datefmt_to_regex(datefmt)),
         '%(created)f': ('created', r'\d+\.\d+'),
         '%(filename)s': ('filename', r'\S+'),
         '%(funcName)s': ('function_name', python_name),
         '%(levelname)s': ('level', r'[a-zA-Z_]+'),
         '%(levelname)-5.5s': ('level', r'[a-zA-Z_][a-zA-Z_ ]{4}'),
+        '%(levelname)-8s': ('level', r'[a-zA-Z_]([a-zA-Z_ ]{7}|[a-zA-Z_]{8,})'),
         '%(levelno)d': ('levelno', r'\d+'),
         '%(lineno)d': ('lineno', r'\d+'),
+        '%(lineno)s': ('lineno', r'\d+'),
         '%(module)s': ('module_name', python_name),
         '%(message)s': ('title', '.*'),
         '%(name)s': ('name', '\S+'),
         '%(pathname)s': ('pathname', '\S+'),
         '%(process)d': ('pid', '\d+'),
-        '%(processName)d': ('process_name', '\S+'),
+        '%(processName)s': ('process_name', '\S+'),
         '%(relativeCreated)d': ('relative_created', '\d+'),
         '%(thread)d': ('thread', '\d+'),
         '%(threadName)s': ('thread_name', '\S+'),
@@ -128,10 +133,12 @@ def build_python_log_format_parser(format):
         replacement = "(?P<%s>%s)" % val
         regex_str = regex_str.replace(search, replacement)
 
-    return (re.compile(regex_str), time_format)
+    log.debug("Built regex string from format %s datefmt %s => %s", format, datefmt, regex_str)
+
+    return (re.compile(regex_str), datefmt)
 
 
-def time_format_to_regex(time_format):
+def datefmt_to_regex(datefmt):
     # the below should work for en-us locale... probably won't work for all locales.
     replacements = {
         '%a': r'[a-zA-Z]+',  # locale's abbreviated weekday name
@@ -159,11 +166,11 @@ def time_format_to_regex(time_format):
     }
 
     for key, val in replacements.iteritems():
-        time_format = time_format.replace(key, val)
+        datefmt = datefmt.replace(key, val)
 
     # last: replace %% with % 
-    time_format = time_format.replace('%%', '%')
-    return time_format
+    datefmt = datefmt.replace('%%', '%')
+    return datefmt
 
 
 ## processors
@@ -191,9 +198,12 @@ class Processor(object):
     def send_payload(self, payload):
         # do immediate http post
         # in the future, will do this with batches and single separate thread
-        config = self.app['config']
-        log.debug("Sending payload: %s", payload)
-        requests.post(config['endpoint'], data=payload, timeout=config['timeout'])
+        if options.dry_run:
+            log.debug("Dry run; payload to send: %s", payload)
+        else:
+            log.debug("Sending payload: %s", payload)
+            config = self.app['config']
+            requests.post(config['endpoint'], data=payload, timeout=config['timeout'])
 
 
 class RatchetFileProcessor(Processor):
@@ -203,7 +213,7 @@ class RatchetFileProcessor(Processor):
     """
     def process(self, fp, filename, state):
         for line in fp:
-            log.debug("read line. length: %d hash: %s", len(line), hashlib.md5(line).hexdigest())
+            log.debug("Read line. Length: %d Hash: %s", len(line), hashlib.md5(line).hexdigest())
             self._process_line(line)
     
     def _process_line(self, line):
@@ -247,6 +257,7 @@ class LogFileProcessor(Processor):
                 continue
             pattern, format = pair.split(" ", 1)
             if format in self.scanner.config['_formats']:
+                pattern = re.compile(fnmatch.translate(pattern))
                 self.pattern_parsers.append((pattern, self.scanner.config['_formats'][format]))
 
     def process(self, fp, filename, state):
@@ -257,9 +268,10 @@ class LogFileProcessor(Processor):
         # otherwise, use the default.
         parser = self.default_parser
         for pattern, _parser in self.pattern_parsers:
-            if re.search(pattern, filename):
+            if pattern.search(filename):
                 parser = _parser
                 break
+        log.debug("File %s using parser %s", filename, parser['name'])
 
         for line in fp:
             # does this look like the beginning of a new log message?
@@ -271,7 +283,7 @@ class LogFileProcessor(Processor):
                     current_message = copy.deepcopy(empty_message)
                 
                 # save interesting data from first line
-                current_message['timestamp'] = parse_timestamp(parser['time_format'], 
+                current_message['timestamp'] = parse_timestamp(parser['datefmt'], 
                     match.group('timestamp'))
                 current_message['level'] = match.group('level')
                 current_message['title'] = match.group('title')
@@ -377,6 +389,9 @@ class ScannerThread(threading.Thread):
                 self.scan_all()
             except:
                 log.exception("Caught exception in ScannerThread.run() loop")
+
+            if options.dry_run:
+                break
             
             # sleep for at most sleep_seconds seconds.
             wait_time = (start_time + sleep_seconds) - time.time()
@@ -387,7 +402,7 @@ class ScannerThread(threading.Thread):
         # we keep state in a dictionary like:
         # {'files': {'filename1': {'pos': 12345, 'inode': 4567}, ...}}
         self.scan_start_time = time.time()
-        state = shelve.open(self.config['_global']['statefile'])
+        state = self.load_state()
         apps_state = state.get('apps', {})
 
         for app in self.apps.itervalues():
@@ -396,15 +411,27 @@ class ScannerThread(threading.Thread):
         # we've been mutating apps_state, but the shelf doesn't know about it.
         # assign back, then close, to persist the changes.
         state['apps'] = apps_state
-        state.close()
+        self.save_state(state)
+
+    def load_state(self):
+        if not options.dry_run:
+            return shelve.open(self.config['_global']['statefile'])
+        else:
+            return {}
+
+    def save_state(self, state):
+        if not options.dry_run:
+            state.close()
 
     def scan_app(self, app, apps_state):
+        log.debug("Scanning app %s", app['name'])
         app_state = apps_state.setdefault(app['name'], {})
         files_state = app_state.setdefault('files', {})
 
         filenames = find_filenames(app['config'])
 
         for filename in filenames:
+            log.debug("Processing file %s", filename)
             stats = os.stat(filename)
             inode = stats[stat.ST_INO]
             mtime = stats[stat.ST_MTIME]
@@ -412,22 +439,27 @@ class ScannerThread(threading.Thread):
                 # filename we've seen before.
                 if inode != files_state[filename]['inode']:
                     # file has been rotated. reset to position 0 and store new inode.
+                    log.debug("File %s appears to have been rotated.", filename)
                     files_state[filename] = {'pos': 0, 'inode': inode, 'mtime': mtime}
             else:
                 # new file - initialize
+                log.debug("Initializing new file %s", filename)
                 files_state[filename] = {'pos': 0, 'inode': inode, 'mtime': mtime}
 
             self.scan_file(app, filename, files_state[filename])
 
+        log.debug("Completed scan of app %s", app['name'])
+
     def scan_file(self, app, filename, file_state):
+        log.debug("Scanning file %s", filename)
         processor = choose_processor(filename)(self, app)
         with open(filename, 'r') as fp:
             pos = file_state['pos']
-            log.debug("file %s seeking to pos %d", filename, pos)
+            log.debug("File %s seeking to pos %d", filename, pos)
             fp.seek(pos)
             processor.process(fp, filename, file_state)
             new_pos = fp.tell()
-            log.debug("file %s new pos %d", filename, new_pos)
+            log.debug("File %s new pos %d", filename, new_pos)
             file_state['pos'] = new_pos
         
 
@@ -461,6 +493,8 @@ def build_option_parser():
 
     parser.add_option('-c', '--config', dest='config_file', action='store', 
         default='ratchet-agent.conf', help='Path to configuration file. Default: ratchet-agent.conf in the working directory.')
+    parser.add_option('--dry-run', dest='dry_run', action='store_true', default=False,
+        help='Dry run: processes log files, but does not save state or submit events to Ratchet. Exits after processing once.')
 
     # verbosity
     verbosity = optparse.OptionGroup(parser, 'Verbosity')
@@ -528,13 +562,17 @@ def parse_config(filename):
 
             format_type = cp.get(section_name, 'type')
             format_spec = cp.get(section_name, 'format', True)
+            try:
+                format_datefmt = cp.get(section_name, 'datefmt', True)
+            except ConfigParser.NoOptionError:
+                format_datefmt = DEFAULT_DATEFMT
 
             if format_type != 'python':
                 log.warning("Unrecognized format type: %s", format_type)
                 continue
-            regex, time_format = build_python_log_format_parser(format_spec)
+            regex, datefmt = build_python_log_format_parser(format_spec, format_datefmt)
             format['regex'] = regex
-            format['time_format'] = time_format
+            format['datefmt'] = datefmt
 
             config['_formats'][format_name] = format
 
@@ -584,7 +622,13 @@ if __name__ == '__main__':
         level = logging.DEBUG
     elif options.quiet:
         level = logging.WARNING
-    logging.basicConfig(level=level)
+    
+    formatter = logging.Formatter("%(asctime)s %(levelname)-5.5s %(message)s")
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+    handler.setLevel(level)
+    log.addHandler(handler)
+    log.setLevel(level)
 
     # start main loop
     main_loop()

@@ -23,7 +23,9 @@ import requests
 
 log = logging.getLogger(__name__)
 
-DEFAULT_ENDPOINT = 'https://submit.ratchet.io/api/item/'
+VERSION = '0.1.12'
+
+DEFAULT_ENDPOINT = 'https://submit.ratchet.io/api/1/item/'
 DEFAULT_TIMEOUT = 3  # in seconds
         
 LOG_LEVEL = {
@@ -91,6 +93,78 @@ def should_process_file(app_config, filename):
     return True
 
 
+def build_python_log_format_parser(format):
+    """
+    Parses a python log format string, and returns a (regex, strptimeformat) to parse it.
+    """
+    time_format = '%Y-%m-%d %H:%M:%S,%f'  # default - TODO make this configurable
+
+    python_name = r'[a-zA-Z_][a-zA-Z0-9_]*'
+
+    # dict of key: (match_name, regex_string)
+    known_keys = {
+        '%(asctime)s': ('timestamp', time_format_to_regex(time_format)),
+        '%(created)f': ('created', r'\d+\.\d+'),
+        '%(filename)s': ('filename', r'\S+'),
+        '%(funcName)s': ('function_name', python_name),
+        '%(levelname)-5.5s': ('level', r'[a-zA-Z_]+'),
+        '%(levelno)d': ('levelno', r'\d+'),
+        '%(lineno)d': ('lineno', r'\d+'),
+        '%(module)s': ('module_name', python_name),
+        '%(message)s': ('title', '.*'),
+        '%(name)s': ('name', '\S+'),
+        '%(pathname)s': ('pathname', '\S+'),
+        '%(process)d': ('pid', '\d+'),
+        '%(processName)d': ('process_name', '\S+'),
+        '%(relativeCreated)d': ('relative_created', '\d+'),
+        '%(thread)d': ('thread', '\d+'),
+        '%(threadName)s': ('thread_name', '\S+'),
+    }
+
+    regex_str = '^' + re.escape(format) + '$'
+    for key, val in known_keys.iteritems():
+        search = re.escape(key)
+        replacement = "(?P<%s>%s)" % val
+        regex_str = regex_str.replace(search, replacement)
+
+    return (re.compile(regex_str), time_format)
+
+
+def time_format_to_regex(time_format):
+    # the below should work for en-us locale... probably won't work for all locales.
+    replacements = {
+        '%a': r'[a-zA-Z]+',  # locale's abbreviated weekday name
+        '%A': r'[a-zA-Z]+',  # locale's full weekday name
+        '%b': r'[a-zA-Z]+',  # locale's abbreviated month name
+        '%B': r'[a-zA-Z]+',  # locale's full month name
+        '%c': r'[a-zA-Z]+ [a-zA-Z]+ \d{1,2} \d{2}:\d{2}:\d{2} \d{4}',  # locale's appropriate date and time representation.
+        '%d': r'\d{2}',  # day of the month [01,31]
+        '%f': r'\d+',  # milliseconds
+        '%H': r'\d{2}',  # hour (24-hour clock) [00,23]
+        '%I': r'\d{2}',  # hour (12-hour clock) [01,12]
+        '%j': r'\d{3}',  # day of the year as a decimal number [001,366]
+        '%m': r'\d{2}',  # month [01,12]
+        '%M': r'\d{2}',  # minute [00,59]
+        '%p': r'[A-Z]{2}',  # locale's equivalent of either AM or PM
+        '%S': r'\d{2}',  # second [00,61]
+        '%U': r'\d{2}',  # week number of the year starting on Sundays [00,53]
+        '%w': r'\d',  # weekday number [0,6]
+        '%W': r'\d{2}', # week number of the year starting on Mondays [00,53]
+        '%x': r'\d{2}/\d{2}/\d{2}',  # locale's date representation
+        '%X': r'\d{2}:\d{2}:\d{2}',  # locale's time representation
+        '%y': r'\d{2}',  # year without century [00,99]
+        '%Y': r'\d{4}',  # year with century
+        '%Z': r'[A-Z]{3}',  # time zone name
+    }
+
+    for key, val in replacements.iteritems():
+        time_format = time_format.replace(key, val)
+
+    # last: replace %% with % 
+    time_format = time_format.replace('%%', '%')
+    return time_format
+
+
 ## processors
 
 def choose_processor(filename):
@@ -151,12 +225,34 @@ class LogFileProcessor(Processor):
     Some events we want will span multiple lines.
     """
     # list of tuples containing (pattern, strptime format)
-    # pattern should put the timestamp into group #1
-    _message_start_pats = [
+    _default_message_start_pats = [
         # pylons generic
         (re.compile(r'(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),(\d+)?\s+(?P<level>[A-Z]+)\s+(?P<title>.*$)'), 
          '%Y-%m-%d %H:%M:%S'),
-    ]   
+    ]
+
+    def __init__(self, *args, **kw):
+        super(LogFileProcessor, self).__init__(*args, **kw)
+        self._build_message_start_pats()
+
+    def _build_message_start_pats(self):
+        # build _message_start_pats from config. fall back to defaults if config is bad.
+        app_config = self.app['config']
+        self._message_start_pats = []
+        
+        # create regex from log_format.format
+        if app_config.get('log_format.type') != 'python':
+            log.warning("Unrecognize log_format.type: %s. Only recognized type is 'python'", 
+                app_config.get('log_format.type'))
+            self._message_start_pats.extend(self._default_message_start_pats)
+            return
+
+        format = app_config.get('log_format.format')
+        if not format:
+            return
+
+        parser_tuple = build_python_log_format_parser(app_config['log_format.format'])
+        self._message_start_pats.append(parser_tuple)
 
     def process(self, fp, filename, state):
         empty_message = {'data': [], 'timestamp': None, 'level': None, 'title': None}
@@ -204,23 +300,53 @@ class LogFileProcessor(Processor):
             log.debug("Skipping message; level: %s min_level: %d", level_string, min_level)
             return
 
-        data = "".join(message['data'])
-        log.debug("Processing message. Timestamp: %s Level: %s Title: %s Data: %s",
-            message['timestamp'], message['level'], message['title'], data)
-        # eventually, we'll send level and title as separate params
-        # for now, send it all together
-        payload = {}
-        payload['access_token'] = self.app['config']['params.access_token']
-        payload['timestamp'] = message['timestamp']
-        payload['body'] = data
-
-        params = {}
-        params.update(self.app['payload_params'])
-        params['server.log_file'] = filename
-
-        payload['params'] = json.dumps(params)
-
+        payload = self._build_payload(message, filename)
         self.send_payload(payload)
+
+    def _build_payload(self, message, filename):
+        message_data = "".join(message['data'])
+        log.debug("Building message payload. Timestamp: %s Level: %s Title: %s Data: %s",
+            message['timestamp'], message['level'], message['title'], message_data)
+        
+        app_config = self.app['config']
+        
+        # basic params
+        data = {
+            'timestamp': message['timestamp'],
+            'environment': app_config['params.environment'],
+            'level': message['level'].lower(),
+            'notifier': {
+                'name': 'ratchet-agent',
+                'ratchet_agent_app': self.app['name'],
+                'version': VERSION
+            }
+        }
+        if app_config.get('params.language'):
+            data['language'] = app_config['params.language']
+        if app_config.get('params.framework'):
+            data['framework'] = app_config['params.framework']
+
+        # message body
+        data['body'] = {
+            'message': {
+                'title': message['title'],
+                'body': message_data
+            }
+        }
+
+        # server environment
+        data['server'] = {
+            'log_file': filename,
+            'host': self.app['host'],
+            'branch': app_config['params.branch'],
+            'root': app_config['params.root'],
+        }
+
+        payload = {
+            'access_token': self.app['config']['params.access_token'],
+            'data': data
+        }
+        return json.dumps(payload)
 
 
 ## main thread and loop
@@ -242,16 +368,7 @@ class ScannerThread(threading.Thread):
             self.apps[app_name] = {
                 'name': app_name,
                 'config': app_config,
-                'payload_params': {
-                    'server.host': socket.gethostname(),
-                    'server.environment': app_config['params.environment'],
-                    'server.branch': app_config['params.branch'],
-                    'server.root': app_config['params.root'],
-                    'server.github.account': app_config['params.github.account'],
-                    'server.github.repo': app_config['params.github.repo'],
-                    'notifier.name': 'ratchet-agent',
-                    'notifier.ratchet_agent_app': app_name,
-                }
+                'host': socket.gethostname(),
             }
 
     def run(self):
@@ -372,6 +489,8 @@ def parse_config(filename):
         'ext_blacklist': '',
         'targets': '',
         'blacklist': '',
+        'log_format.type': 'python',
+        'log_format.format': '%(asctime)s %(levelname)-5.5s [%(name)s][%(threadName)s] %(message)s',
     }
 
     def to_int(val):
@@ -399,7 +518,7 @@ def parse_config(filename):
         if section_name.startswith('app:'):
             app_name = section_name[len('app:'):]
             app = {'name': app_name}
-            for option_name, raw_value in cp.items(section_name):
+            for option_name, raw_value in cp.items(section_name, True):
                 if option_name in parsers:
                     value = parsers[option_name](raw_value)
                 else:

@@ -12,7 +12,7 @@ except IOError:
 setup(
     name='ratchet-agent',
     data_files=[('', ['ratchet-agent', 'ratchet-agent-init.sh', 'ratchet-agent.conf', 'LICENSE', 'requirements.txt'])],
-    version='0.1.11',
+    version='0.1.12',
     description='Ratchet.io server-side agent',
     long_description=README,
     author='Brian Rue',

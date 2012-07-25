@@ -24,7 +24,7 @@ import requests
 
 log = logging.getLogger(__name__)
 
-VERSION = '0.1.15'
+VERSION = '0.1.16'
 
 DEFAULT_ENDPOINT = 'https://submit.ratchet.io/api/1/item/'
 DEFAULT_TIMEOUT = 3  # in seconds
@@ -203,7 +203,10 @@ class Processor(object):
         else:
             log.debug("Sending payload: %s", payload)
             config = self.app['config']
-            requests.post(config['endpoint'], data=payload, timeout=config['timeout'])
+            resp = requests.post(config['endpoint'], data=payload, timeout=config['timeout'])
+            if resp.status_code != 200:
+                log.warning("Unexpected response from Ratchet API. Code: %s Body: %s", 
+                    resp.status_code, resp.text)
 
 
 class RatchetFileProcessor(Processor):

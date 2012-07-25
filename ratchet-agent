@@ -23,7 +23,7 @@ import requests
 
 log = logging.getLogger(__name__)
 
-VERSION = '0.1.12'
+VERSION = '0.1.13'
 
 DEFAULT_ENDPOINT = 'https://submit.ratchet.io/api/1/item/'
 DEFAULT_TIMEOUT = 3  # in seconds
@@ -107,6 +107,7 @@ def build_python_log_format_parser(format):
         '%(created)f': ('created', r'\d+\.\d+'),
         '%(filename)s': ('filename', r'\S+'),
         '%(funcName)s': ('function_name', python_name),
+        '%(levelname)s': ('level', r'[a-zA-Z_]+'),
         '%(levelname)-5.5s': ('level', r'[a-zA-Z_]+'),
         '%(levelno)d': ('levelno', r'\d+'),
         '%(lineno)d': ('lineno', r'\d+'),
@@ -224,61 +225,56 @@ class LogFileProcessor(Processor):
     Processor for general log files - currently works reasonably well for paste/pylons log files.
     Some events we want will span multiple lines.
     """
-    # list of tuples containing (pattern, strptime format)
-    _default_message_start_pats = [
-        # pylons generic
-        (re.compile(r'(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),(\d+)?\s+(?P<level>[A-Z]+)\s+(?P<title>.*$)'), 
-         '%Y-%m-%d %H:%M:%S'),
-    ]
+    # tuple of (pattern, strptime format)
+    _default_message_start_parser = (re.compile(r'(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),(\d+)?\s+(?P<level>[A-Z]+)\s+(?P<title>.*$)'), '%Y-%m-%d %H:%M:%S')
 
     def __init__(self, *args, **kw):
         super(LogFileProcessor, self).__init__(*args, **kw)
-        self._build_message_start_pats()
+        self._init_formatters()
 
-    def _build_message_start_pats(self):
-        # build _message_start_pats from config. fall back to defaults if config is bad.
-        app_config = self.app['config']
-        self._message_start_pats = []
-        
-        # create regex from log_format.format
-        if app_config.get('log_format.type') != 'python':
-            log.warning("Unrecognize log_format.type: %s. Only recognized type is 'python'", 
-                app_config.get('log_format.type'))
-            self._message_start_pats.extend(self._default_message_start_pats)
-            return
+    def _init_formatters(self):
+        default_pattern_name = self.app['config']['log_format.default']
+        self.default_parser = self.scanner.config['_formats'].get(default_pattern_name, 
+            self._default_message_start_parser)
 
-        format = app_config.get('log_format.format')
-        if not format:
-            return
+        # ordered list of tuples, in descending order of priority.
+        self.pattern_parsers = []
 
-        parser_tuple = build_python_log_format_parser(app_config['log_format.format'])
-        self._message_start_pats.append(parser_tuple)
+        patterns_config = self.app['config']['log_format.patterns'].split('\n')
+        for pair in patterns_config:
+            pair = pair.strip()
+            if not pair:
+                continue
+            pattern, format = pair.split(" ", 1)
+            if format in self.scanner.config['_formats']:
+                self.pattern_parsers.append((pattern, self.scanner.config['_formats'][format]))
 
     def process(self, fp, filename, state):
         empty_message = {'data': [], 'timestamp': None, 'level': None, 'title': None}
         current_message = state.get('current_message', copy.deepcopy(empty_message))
 
+        # if this filename matches any of our parsers, use the appropriate parser.
+        # otherwise, use the default.
+        parser = self.default_parser
+        for pattern, _parser in self.pattern_parsers:
+            if re.search(pattern, filename):
+                parser = _parser
+                break
+
         for line in fp:
             # does this look like the beginning of a new log message?
-            new_message_match = None
-
-            for pattern, format in self._message_start_pats:
-                match = pattern.match(line)
-                if match:
-                    new_message_match = match
-                    break
-
-            if new_message_match:
+            match = parser['regex'].match(line)
+            if match:
                 if current_message['data']:
                     # done with the previous item - send it off and clear data
                     self._process_message(current_message, filename)
                     current_message = copy.deepcopy(empty_message)
                 
                 # save interesting data from first line
-                current_message['timestamp'] = parse_timestamp(format, 
-                    new_message_match.group('timestamp'))
-                current_message['level'] = new_message_match.group('level')
-                current_message['title'] = new_message_match.group('title')
+                current_message['timestamp'] = parse_timestamp(parser['time_format'], 
+                    match.group('timestamp'))
+                current_message['level'] = match.group('level')
+                current_message['title'] = match.group('title')
             
             current_message['data'].append(line)
         
@@ -363,7 +359,7 @@ class ScannerThread(threading.Thread):
         
         self.apps = {}
         for app_name, app_config in config.iteritems():
-            if app_name == '_global':
+            if app_name.startswith('_'):
                 continue
             self.apps[app_name] = {
                 'name': app_name,
@@ -489,8 +485,8 @@ def parse_config(filename):
         'ext_blacklist': '',
         'targets': '',
         'blacklist': '',
-        'log_format.type': 'python',
-        'log_format.format': '%(asctime)s %(levelname)-5.5s [%(name)s][%(threadName)s] %(message)s',
+        'log_format.default': '',
+        'log_format.patterns': '',
     }
 
     def to_int(val):
@@ -513,12 +509,12 @@ def parse_config(filename):
     cp = ConfigParser.SafeConfigParser(defaults)
     cp.read([filename])
 
-    config = {}
+    config = {'_formats': {}}
     for section_name in cp.sections():
         if section_name.startswith('app:'):
             app_name = section_name[len('app:'):]
             app = {'name': app_name}
-            for option_name, raw_value in cp.items(section_name, True):
+            for option_name, raw_value in cp.items(section_name):
                 if option_name in parsers:
                     value = parsers[option_name](raw_value)
                 else:
@@ -526,6 +522,21 @@ def parse_config(filename):
                 app[option_name] = value
             
             config[app_name] = app
+        elif section_name.startswith('format:'):
+            format_name = section_name[len('format:'):]
+            format = {'name': format_name}
+
+            format_type = cp.get(section_name, 'type')
+            format_spec = cp.get(section_name, 'format', True)
+
+            if format_type != 'python':
+                log.warning("Unrecognized format type: %s", format_type)
+                continue
+            regex, time_format = build_python_log_format_parser(format_spec)
+            format['regex'] = regex
+            format['time_format'] = time_format
+
+            config['_formats'][format_name] = format
 
     global_config = cp.defaults()
     config['_global'] = {}
@@ -543,7 +554,7 @@ def validate_config(config):
     errors = []
     required_vars = ['params.access_token', 'targets']
     for app_name, app_config in config.iteritems():
-        if app_name == '_global':
+        if app_name.startswith('_'):
             continue
         for var_name in required_vars:
             if not app_config.get('params.access_token'):

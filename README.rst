@@ -21,7 +21,7 @@ Install with pip::
 
 This will install the ratchet-agent files in the root directory of your virtualenv. Or if you'd prefer, clone this git repo:
 
-    git clone https://github.com/brianr/ratchet-agent.git
+    git clone https://github.com/ratchetio/ratchet-agent.git
 
 See Configuration for configuration options and setup.
 
@@ -56,7 +56,7 @@ Configuration variables should be self-explanatory. If you're not using a virtua
 Contributing
 ------------
 
-Contributions are welcome. The project is hosted on github at http://github.com/brianr/ratchet-agent
+Contributions are welcome. The project is hosted on github at http://github.com/ratchetio/ratchet-agent
 
 
 Additional Help
@@ -65,5 +65,5 @@ If you have any questions, feedback, etc., drop me a line at brian@ratchet.io
 
 
 .. _Ratchet.io: http://ratchet.io/
-.. _`download the zip`: https://github.com/brianr/django_ratchet/zipball/master
-.. _ratchet-agent: http://github.com/brianr/ratchet-agent
+.. _`download the zip`: https://github.com/ratchetio/django_ratchet/zipball/master
+.. _ratchet-agent: http://github.com/ratchetio/ratchet-agent

@@ -12,12 +12,12 @@ except IOError:
 setup(
     name='ratchet-agent',
     data_files=[('', ['ratchet-agent', 'ratchet-agent-init.sh', 'ratchet-agent.conf', 'LICENSE', 'requirements.txt'])],
-    version='0.1.16',
+    version='0.1.17',
     description='Ratchet.io server-side agent',
     long_description=README,
     author='Brian Rue',
     author_email='brian@ratchet.io',
-    url='http://github.com/brianr/ratchet-agent',
+    url='http://github.com/ratchetio/ratchet-agent',
     classifiers=[
         "Programming Language :: Python",
         "License :: OSI Approved :: MIT License",

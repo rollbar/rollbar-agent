@@ -287,9 +287,9 @@ class LogFileProcessor(Processor):
                 
                 # save interesting data from first line
                 current_message['timestamp'] = parse_timestamp(parser['datefmt'], 
-                    match.group('timestamp'))
-                current_message['level'] = match.group('level')
-                current_message['title'] = match.group('title')
+                    match.group('timestamp').strip())
+                current_message['level'] = match.group('level').strip()
+                current_message['title'] = match.group('title').strip()
             
             current_message['data'].append(line)
         

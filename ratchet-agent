@@ -3,6 +3,7 @@
 ratchet-agent: agent to monitor log files and send notices to Ratchet.io
 """
 
+import codecs
 import ConfigParser
 import copy
 import fnmatch
@@ -456,7 +457,7 @@ class ScannerThread(threading.Thread):
     def scan_file(self, app, filename, file_state):
         log.debug("Scanning file %s", filename)
         processor = choose_processor(filename)(self, app)
-        with open(filename, 'r') as fp:
+        with codecs.open(filename, 'r', encoding='utf-8', errors='replace') as fp:
             pos = file_state['pos']
             log.debug("File %s seeking to pos %d", filename, pos)
             fp.seek(pos)

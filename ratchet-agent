@@ -126,6 +126,7 @@ def build_python_log_format_parser(format, datefmt):
         '%(relativeCreated)d': ('relative_created', '\d+'),
         '%(thread)d': ('thread', '\d+'),
         '%(threadName)s': ('thread_name', '\S+'),
+        '%(threadName)-20s': ('thread_name', '\S+ {,19}'),
     }
 
     regex_str = '^' + re.escape(format) + '$'
@@ -291,7 +292,8 @@ class LogFileProcessor(Processor):
                     match.group('timestamp').strip())
                 current_message['level'] = match.group('level').strip()
                 current_message['title'] = match.group('title').strip()
-            
+                current_message['thread_name'] = match.group('thread_name').strip()
+
             current_message['data'].append(line)
         
         if self.scanner.scan_start_time - state['mtime'] > 1:

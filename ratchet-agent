@@ -292,7 +292,8 @@ class LogFileProcessor(Processor):
                     match.group('timestamp').strip())
                 current_message['level'] = match.group('level').strip()
                 current_message['title'] = match.group('title').strip()
-                current_message['thread_name'] = match.group('thread_name').strip()
+                if 'thread_name' in match.groupdict():
+                    current_message['thread_name'] = match.group('thread_name').strip()
 
             current_message['data'].append(line)
         

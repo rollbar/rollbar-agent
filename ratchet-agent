@@ -25,7 +25,7 @@ import requests
 
 log = logging.getLogger(__name__)
 
-VERSION = '0.2.2'
+VERSION = '0.2.3'
 
 DEFAULT_ENDPOINT = 'https://submit.ratchet.io/api/1/item/'
 DEFAULT_TIMEOUT = 3  # in seconds
@@ -277,6 +277,19 @@ class LogFileProcessor(Processor):
                 parser = _parser
                 break
         log.debug("File %s using parser %s", filename, parser['name'])
+        
+        scrub_regexes = []
+        
+        patterns_config = self.app['config']['scrub_regex_patterns'].split('\n')
+        for pattern in patterns_config:
+            pattern = pattern.strip()
+            if not pattern:
+                continue
+            
+            try:
+                scrub_regexes.append(re.compile(pattern))
+            except Exception, e:
+                log.warning("Could not compile regex pattern: %s" % pattern)
 
         for line in fp:
             # does this look like the beginning of a new log message?
@@ -295,6 +308,12 @@ class LogFileProcessor(Processor):
                 if 'thread_name' in match.groupdict():
                     current_message['thread_name'] = match.group('thread_name').strip()
 
+            for regex in scrub_regexes:
+                try:
+                    line = regex.sub('******', line)
+                except Exception, e:
+                    log.warning("Could not use regex %s on line %s" % (regex, line))
+            
             current_message['data'].append(line)
         
         if self.scanner.scan_start_time - state['mtime'] > 1:
@@ -528,6 +547,7 @@ def parse_config(filename):
         'blacklist': '',
         'log_format.default': '',
         'log_format.patterns': '',
+        'scrub_regex_patterns': '',
     }
 
     def to_int(val):

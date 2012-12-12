@@ -227,12 +227,12 @@ class RatchetFileProcessor(Processor):
             log.debug("Skipping empty line")
             return
         try:
-            payload = json.loads(line)
+            json.loads(line)
         except ValueError:
             log.warning("Could not process badly formatted line: %s", line)
             return
 
-        self.send_payload(payload)
+        self.send_payload(line)
 
 
 class LogFileProcessor(Processor):

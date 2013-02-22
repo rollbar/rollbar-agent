@@ -64,6 +64,6 @@ Additional Help
 If you have any questions, feedback, etc., drop me a line at brian@rollbar.com
 
 
-.. _Rollbar: http://rollbar.io/
+.. _Rollbar: http://rollbar.com/
 .. _`download the zip`: https://github.com/rollbar/pyrollbar/zipball/master
 .. _rollbar-agent: http://github.com/rollbar/rollbar-agent

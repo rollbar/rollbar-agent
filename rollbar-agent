@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-ratchet-agent: agent to monitor log files and send notices to Ratchet.io
+rollbar-agent: agent to monitor log files and send notices to Rollbar
 """
 
 import codecs
@@ -25,9 +25,9 @@ import requests
 
 log = logging.getLogger(__name__)
 
-VERSION = '0.2.4'
+VERSION = '0.3.0'
 
-DEFAULT_ENDPOINT = 'https://submit.ratchet.io/api/1/item/'
+DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/item/'
 DEFAULT_TIMEOUT = 3  # in seconds
 DEFAULT_DATEFMT = '%Y-%m-%d %H:%M:%S,%f'
         
@@ -181,8 +181,8 @@ def choose_processor(filename):
     """
     Returns the Processor subclass that should be used to process the specified file
     """
-    if filename.endswith('.ratchet'):
-        return RatchetFileProcessor
+    if filename.endswith('.rollbar'):
+        return RollbarFileProcessor
     return LogFileProcessor
 
 
@@ -207,13 +207,13 @@ class Processor(object):
             config = self.app['config']
             resp = requests.post(config['endpoint'], data=payload, timeout=config['timeout'])
             if resp.status_code != 200:
-                log.warning("Unexpected response from Ratchet API. Code: %s Body: %s", 
+                log.warning("Unexpected response from Rollbar API. Code: %s Body: %s", 
                     resp.status_code, resp.text)
 
 
-class RatchetFileProcessor(Processor):
+class RollbarFileProcessor(Processor):
     """
-    Processor for .ratchet files
+    Processor for .rollbar files
     Each line is a json-encoded payload, so all we have to do is decode it and send it.
     """
     def process(self, fp, filename, state):
@@ -350,8 +350,8 @@ class LogFileProcessor(Processor):
             'environment': app_config['params.environment'],
             'level': message['level'].lower(),
             'notifier': {
-                'name': 'ratchet-agent',
-                'ratchet_agent_app': self.app['name'],
+                'name': 'rollbar-agent',
+                'rollbar_agent_app': self.app['name'],
                 'version': VERSION
             }
         }
@@ -387,7 +387,7 @@ class LogFileProcessor(Processor):
 
 class ScannerThread(threading.Thread):
     """
-    The main 'scanner' thread - scans files and posts items to the ratchet.io api.
+    The main 'scanner' thread - scans files and posts items to the rollbar api.
     There should only be a single instance of this thread.
     """
     def __init__(self, stop_event, config):
@@ -518,9 +518,9 @@ def build_option_parser():
     parser = optparse.OptionParser()
 
     parser.add_option('-c', '--config', dest='config_file', action='store', 
-        default='ratchet-agent.conf', help='Path to configuration file. Default: ratchet-agent.conf in the working directory.')
+        default='rollbar-agent.conf', help='Path to configuration file. Default: rollbar-agent.conf in the working directory.')
     parser.add_option('--dry-run', dest='dry_run', action='store_true', default=False,
-        help='Dry run: processes log files, but does not save state or submit events to Ratchet. Exits after processing once.')
+        help='Dry run: processes log files, but does not save state or submit events to Rollbar. Exits after processing once.')
 
     # verbosity
     verbosity = optparse.OptionGroup(parser, 'Verbosity')
@@ -536,12 +536,12 @@ def build_option_parser():
 
 def parse_config(filename):
     defaults = {
-        'statefile': '/var/cache/ratchet-agent.state',
+        'statefile': '/var/cache/rollbar-agent.state',
         'sleep_time': '10',
         'endpoint': DEFAULT_ENDPOINT,
         'timeout': str(DEFAULT_TIMEOUT),
         'root': os.getcwd(),
-        'ext_whitelist': 'log, ratchet',
+        'ext_whitelist': 'log, rollbar',
         'ext_blacklist': '',
         'targets': '',
         'blacklist': '',

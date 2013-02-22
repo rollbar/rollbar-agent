@@ -10,14 +10,14 @@ except IOError:
     README = ''
 
 setup(
-    name='ratchet-agent',
-    data_files=[('', ['ratchet-agent', 'ratchet-agent-init.sh', 'ratchet-agent.conf', 'LICENSE', 'requirements.txt'])],
+    name='rollbar-agent',
+    data_files=[('', ['rollbar-agent', 'rollbar-agent-init.sh', 'rollbar-agent.conf', 'LICENSE', 'requirements.txt'])],
     version='0.2.4',
-    description='Ratchet.io server-side agent',
+    description='Rollbar server-side agent',
     long_description=README,
-    author='Ratchet, Inc.',
-    author_email='support@ratchet.io',
-    url='http://github.com/ratchetio/ratchet-agent',
+    author='Rollbar, Inc.',
+    author_email='support@rollbar.com',
+    url='http://github.com/rollbar/rollbar-agent',
     classifiers=[
         "Programming Language :: Python",
         "License :: OSI Approved :: MIT License",

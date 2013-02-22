@@ -1,17 +1,17 @@
 #!/bin/bash
 # chkconfig: 345 99 01
-# description: ratchet-agent - watches log files and pushes events to ratchet.io
+# description: rollbar-agent - watches log files and pushes events to rollbar
 
-# Example init.d script for ratchet-agent
-# Change the configuration variables as needed, then symlink to /etc/init.d/ratchet-agent
+# Example init.d script for rollbar-agent
+# Change the configuration variables as needed, then symlink to /etc/init.d/rollbar-agent
 
-# ratchet configuration
-CONFIG_FILE=/etc/ratchet-agent.conf
+# rollbar configuration
+CONFIG_FILE=/etc/rollbar-agent.conf
 
 # system configuration
-PROGRAM="/var/www/ratchet-agent/ratchet-agent"
+PROGRAM="/var/www/rollbar-agent/rollbar-agent"
 ARGS="--config=$CONFIG_FILE"
-PROGNAME='ratchet-agent'
+PROGNAME='rollbar-agent'
 PIDFILE="/var/run/$PROGNAME.pid"
 ALT_PIDFILE="/var/run/$PROGNAME.sh.pid"
 LOGFILE="/var/log/$PROGNAME.log"

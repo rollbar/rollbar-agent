@@ -1,4 +1,4 @@
 *.pyc
 *.db
-ratchet_agent.egg-info/
+rollbar_agent.egg-info/
 dist/

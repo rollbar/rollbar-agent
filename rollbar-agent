@@ -181,7 +181,7 @@ def choose_processor(filename):
     """
     Returns the Processor subclass that should be used to process the specified file
     """
-    if filename.endswith('.rollbar'):
+    if filename.endswith('.rollbar') or filename.endswith('.ratchet'):
         return RollbarFileProcessor
     return LogFileProcessor
 

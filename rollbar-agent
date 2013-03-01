@@ -25,7 +25,7 @@ import requests
 
 log = logging.getLogger(__name__)
 
-VERSION = '0.3.0'
+VERSION = '0.3.1'
 
 DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/item/'
 DEFAULT_TIMEOUT = 3  # in seconds
@@ -416,7 +416,7 @@ class ScannerThread(threading.Thread):
             except:
                 log.exception("Caught exception in ScannerThread.run() loop")
 
-            if options.dry_run or options.initialize:
+            if options.dry_run or options.skip_to_end:
                 break
 
             # sleep for at most sleep_seconds seconds.
@@ -483,7 +483,7 @@ class ScannerThread(threading.Thread):
             pos = file_state['pos']
             log.debug("File %s seeking to pos %d", filename, pos)
             fp.seek(pos)
-            if options.initialize:
+            if options.skip_to_end:
                 fp.seek(0, os.SEEK_END)
             else:
                 processor.process(fp, filename, file_state)
@@ -524,7 +524,7 @@ def build_option_parser():
         default='rollbar-agent.conf', help='Path to configuration file. Default: rollbar-agent.conf in the working directory.')
     parser.add_option('--dry-run', dest='dry_run', action='store_true', default=False,
         help='Dry run: processes log files, but does not save state or submit events to Rollbar. Exits after processing once.')
-    parser.add_option('--initialize', dest='initialize', action='store_true', default=False,
+    parser.add_option('--skip_to_end', dest='skip_to_end', action='store_true', default=False,
         help='Go through existing log files and save them in the state without processing them, so you do not process existing log info next run. Exits after processing once.')
 
     # verbosity

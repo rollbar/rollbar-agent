@@ -61,7 +61,7 @@ Contributions are welcome. The project is hosted on github at http://github.com/
 
 Additional Help
 ---------------
-If you have any questions, feedback, etc., drop me a line at brian@rollbar.com
+If you have any questions, feedback, etc., drop us a line at team@rollbar.com
 
 
 .. _Rollbar: http://rollbar.com/

@@ -6,6 +6,7 @@ rollbar-agent: agent to monitor log files and send notices to Rollbar
 import codecs
 import ConfigParser
 import copy
+import dbm
 import fnmatch
 import hashlib
 import json
@@ -25,12 +26,12 @@ import requests
 
 log = logging.getLogger(__name__)
 
-VERSION = '0.3.0'
+VERSION = '0.3.2'
 
 DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/item/'
 DEFAULT_TIMEOUT = 3  # in seconds
 DEFAULT_DATEFMT = '%Y-%m-%d %H:%M:%S,%f'
-        
+
 LOG_LEVEL = {
     'notset': 0,
     'notse': 0,
@@ -79,7 +80,7 @@ def should_process_file(app_config, filename):
     """
     if not os.path.isfile(filename):
         return False
-    
+
     if filename in app_config['blacklist']:
         return False
 
@@ -170,7 +171,7 @@ def datefmt_to_regex(datefmt):
     for key, val in replacements.iteritems():
         datefmt = datefmt.replace(key, val)
 
-    # last: replace %% with % 
+    # last: replace %% with %
     datefmt = datefmt.replace('%%', '%')
     return datefmt
 
@@ -207,7 +208,7 @@ class Processor(object):
             config = self.app['config']
             resp = requests.post(config['endpoint'], data=payload, timeout=config['timeout'])
             if resp.status_code != 200:
-                log.warning("Unexpected response from Rollbar API. Code: %s Body: %s", 
+                log.warning("Unexpected response from Rollbar API. Code: %s Body: %s",
                     resp.status_code, resp.text)
 
 
@@ -220,7 +221,7 @@ class RollbarFileProcessor(Processor):
         for line in fp:
             log.debug("Read line. Length: %d Hash: %s", len(line), hashlib.md5(line).hexdigest())
             self._process_line(line)
-    
+
     def _process_line(self, line):
         line = line.strip()
         if not line:
@@ -249,7 +250,7 @@ class LogFileProcessor(Processor):
 
     def _init_formatters(self):
         default_pattern_name = self.app['config']['log_format.default']
-        self.default_parser = self.scanner.config['_formats'].get(default_pattern_name, 
+        self.default_parser = self.scanner.config['_formats'].get(default_pattern_name,
             self._default_message_start_parser)
 
         # ordered list of tuples, in descending order of priority.
@@ -277,15 +278,15 @@ class LogFileProcessor(Processor):
                 parser = _parser
                 break
         log.debug("File %s using parser %s", filename, parser['name'])
-        
+
         scrub_regexes = []
-        
+
         patterns_config = self.app['config']['scrub_regex_patterns'].split('\n')
         for pattern in patterns_config:
             pattern = pattern.strip()
             if not pattern:
                 continue
-            
+
             try:
                 scrub_regexes.append(re.compile(pattern))
             except Exception, e:
@@ -299,9 +300,9 @@ class LogFileProcessor(Processor):
                     # done with the previous item - send it off and clear data
                     self._process_message(current_message, filename)
                     current_message = copy.deepcopy(empty_message)
-                
+
                 # save interesting data from first line
-                current_message['timestamp'] = parse_timestamp(parser['datefmt'], 
+                current_message['timestamp'] = parse_timestamp(parser['datefmt'],
                     match.group('timestamp').strip())
                 current_message['level'] = match.group('level').strip()
                 current_message['title'] = match.group('title').strip()
@@ -313,9 +314,9 @@ class LogFileProcessor(Processor):
                     line = regex.sub('******', line)
                 except Exception, e:
                     log.warning("Could not use regex %s on line %s" % (regex, line))
-            
+
             current_message['data'].append(line)
-        
+
         if self.scanner.scan_start_time - state['mtime'] > 1:
             # it's been at least 1 second since anything was written to the file
             # if there's a pending message, send it
@@ -341,9 +342,9 @@ class LogFileProcessor(Processor):
         message_data = "".join(message['data'])
         log.debug("Building message payload. Timestamp: %s Level: %s Title: %s Data: %s",
             message['timestamp'], message['level'], message['title'], message_data)
-        
+
         app_config = self.app['config']
-        
+
         # basic params
         data = {
             'timestamp': message['timestamp'],
@@ -394,7 +395,7 @@ class ScannerThread(threading.Thread):
         super(ScannerThread, self).__init__()
         self.stop_event = stop_event
         self.config = config
-        
+
         self.apps = {}
         for app_name, app_config in config.iteritems():
             if app_name.startswith('_'):
@@ -416,9 +417,9 @@ class ScannerThread(threading.Thread):
             except:
                 log.exception("Caught exception in ScannerThread.run() loop")
 
-            if options.dry_run:
+            if options.dry_run or options.skip_to_end:
                 break
-            
+
             # sleep for at most sleep_seconds seconds.
             wait_time = (start_time + sleep_seconds) - time.time()
             if wait_time > 0:
@@ -441,7 +442,14 @@ class ScannerThread(threading.Thread):
 
     def load_state(self):
         if not options.dry_run:
-            return shelve.open(self.config['_global']['statefile'])
+            try:
+                return shelve.open(self.config['_global']['statefile'])
+            except dbm.error:
+                log.error("Could not open statefile for writing. "
+                    "Perhaps the directory doesn't exist? "
+                    "You can configure this by modifying the 'statefile' in rollbar-agent.conf. "
+                    "Current value is %s" % self.config['_global']['statefile'])
+                raise
         else:
             return {}
 
@@ -483,11 +491,14 @@ class ScannerThread(threading.Thread):
             pos = file_state['pos']
             log.debug("File %s seeking to pos %d", filename, pos)
             fp.seek(pos)
-            processor.process(fp, filename, file_state)
+            if options.skip_to_end:
+                fp.seek(0, os.SEEK_END)
+            else:
+                processor.process(fp, filename, file_state)
             new_pos = fp.tell()
             log.debug("File %s new pos %d", filename, new_pos)
             file_state['pos'] = new_pos
-        
+
 
 def register_signal_handlers(stop_event):
     def signal_handler(signum, frame):
@@ -504,11 +515,11 @@ def main_loop():
     scanner = ScannerThread(stop_event, config)
     scanner.start()
 
-    # sleep until the thread is killed 
+    # sleep until the thread is killed
     # have to sleep in a loop, instead of worker.join(), otherwise we'll never get the signals
     while scanner.isAlive():
         time.sleep(1)
-    
+
     log.info("Shutdown complete")
 
 
@@ -517,18 +528,20 @@ def main_loop():
 def build_option_parser():
     parser = optparse.OptionParser()
 
-    parser.add_option('-c', '--config', dest='config_file', action='store', 
+    parser.add_option('-c', '--config', dest='config_file', action='store',
         default='rollbar-agent.conf', help='Path to configuration file. Default: rollbar-agent.conf in the working directory.')
     parser.add_option('--dry-run', dest='dry_run', action='store_true', default=False,
         help='Dry run: processes log files, but does not save state or submit events to Rollbar. Exits after processing once.')
+    parser.add_option('--skip_to_end', dest='skip_to_end', action='store_true', default=False,
+        help='Go through existing log files and save them in the state without processing them, so you do not process existing log info next run. Exits after processing once.')
 
     # verbosity
     verbosity = optparse.OptionGroup(parser, 'Verbosity')
-    verbosity.add_option('-v', '--verbose', dest='verbose', action='store_true', default=False, 
+    verbosity.add_option('-v', '--verbose', dest='verbose', action='store_true', default=False,
         help='Verbose output (uses log level DEBUG)')
     verbosity.add_option('-q', '--quiet', dest='quiet', action='store_true', default=False,
         help='Quiet output (uses log level WARNING)')
-    
+
     parser.add_option_group(verbosity)
 
     return parser
@@ -581,7 +594,7 @@ def parse_config(filename):
                 else:
                     value = raw_value
                 app[option_name] = value
-            
+
             config[app_name] = app
         elif section_name.startswith('format:'):
             format_name = section_name[len('format:'):]
@@ -636,7 +649,7 @@ if __name__ == '__main__':
     # first parse command-line options to get the path to the config file
     parser = build_option_parser()
     (options, args) = parser.parse_args()
-    
+
     # now parse the config file
     config = parse_config(options.config_file)
 
@@ -649,7 +662,7 @@ if __name__ == '__main__':
         level = logging.DEBUG
     elif options.quiet:
         level = logging.WARNING
-    
+
     formatter = logging.Formatter("%(asctime)s %(levelname)-5.5s %(message)s")
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)

@@ -6,6 +6,7 @@ rollbar-agent: agent to monitor log files and send notices to Rollbar
 import codecs
 import ConfigParser
 import copy
+import dbm
 import fnmatch
 import hashlib
 import json
@@ -441,7 +442,14 @@ class ScannerThread(threading.Thread):
 
     def load_state(self):
         if not options.dry_run:
-            return shelve.open(self.config['_global']['statefile'])
+            try:
+                return shelve.open(self.config['_global']['statefile'])
+            except dbm.error:
+                log.error("Could not open statefile for writing. "
+                    "Perhaps the directory doesn't exist? "
+                    "You can configure this by modifying the 'statefile' in rollbar-agent.conf. "
+                    "Current value is %s" % self.config['_global']['statefile'])
+                raise
         else:
             return {}
 

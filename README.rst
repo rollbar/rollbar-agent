@@ -25,12 +25,19 @@ This will install the rollbar-agent files in the root directory of your virtuale
 
 See Configuration for configuration options and setup.
 
-rollbar-agent comes with an example init.d script, chkconfig compatible and tested on Fedora Linux. To install it, symlink ``rollbar-agent-init.sh`` to ``/etc/init.d/rollbar-agent`` and add to chkconfig::
+rollbar-agent comes with an example init.d script, chkconfig compatible and tested on Fedora Linux, update-rc.d on Ubuntu Linux. To install it, symlink ``rollbar-agent-init.sh`` to ``/etc/init.d/rollbar-agent``::
 
     ln -s /path/to/rollbar-agent/rollbar-agent-init.sh /etc/init.d/rollbar-agent
+    service rollbar-agent start
+
+If using chkconfig, run the following::
+
     chkconfig --add rollbar-agent
     chkconfig on rollbar-agent
-    service rollbar-agent start
+    
+If using update-rc.d, run the following::
+
+    update-rc.d rollbar-agent defaults
 
 Configuration
 -------------

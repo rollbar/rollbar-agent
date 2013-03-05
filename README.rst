@@ -1,4 +1,3 @@
-============
 rollbar-agent
 =============
 A daemon to monitor log files and push messages to Rollbar_.

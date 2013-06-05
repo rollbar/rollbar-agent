@@ -39,7 +39,7 @@ Or just grab the .tar.gz::
     tar -xzf v0.3.2
     cd rollbar-agent-0.3.2
 
-Then install (may require sudo):
+Then install (may require sudo)::
 
     python setup.py install
 
@@ -48,16 +48,21 @@ Then install (may require sudo):
 rollbar-agent comes with an example init.d script, chkconfig compatible and tested on Fedora Linux, update-rc.d on Ubuntu Linux. To install it, symlink ``rollbar-agent-init.sh`` to ``/etc/init.d/rollbar-agent``::
 
     ln -s /path/to/rollbar-agent/rollbar-agent-init.sh /etc/init.d/rollbar-agent
-    service rollbar-agent start
 
-If using chkconfig, run the following::
+On Ubuntu, you'll need to add to rc.d. Run the following::
+
+    update-rc.d rollbar-agent defaults
+
+On Fedora, add to chkconfig::
 
     chkconfig --add rollbar-agent
     chkconfig on rollbar-agent
     
-If using update-rc.d, run the following::
+On other systems, check your system's documentation for its equivalent of chkconfig.
 
-    update-rc.d rollbar-agent defaults
+Now, start the service::
+
+    service rollbar-agent start
 
 Configuration
 -------------

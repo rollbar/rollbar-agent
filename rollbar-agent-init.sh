@@ -1,6 +1,15 @@
 #!/bin/bash
 # chkconfig: 345 99 01
 # description: rollbar-agent - watches log files and pushes events to rollbar
+### BEGIN INIT INFO
+# Provides:             rollbar-agent
+# Required-Start:       $remote_fs $syslog $time $named
+# Required-Stop:        $remote_fs $syslog $time $named
+# Default-Start:        2 3 4 5
+# Default-Stop:         0 1 6
+# Short-Description:    Start rollbar-agent
+# Description:          Enables rollbar-agent
+### END INIT INFO
 
 # Example init.d script for rollbar-agent
 # Change the configuration variables as needed, then symlink to /etc/init.d/rollbar-agent
@@ -9,7 +18,7 @@
 CONFIG_FILE=/etc/rollbar-agent.conf
 
 # system configuration
-PROGRAM="/var/www/rollbar-agent/rollbar-agent"
+PROGRAM="/usr/local/rollbar-agent"
 ARGS="--config=$CONFIG_FILE"
 PROGNAME='rollbar-agent'
 PIDFILE="/var/run/$PROGNAME.pid"
@@ -17,6 +26,7 @@ ALT_PIDFILE="/var/run/$PROGNAME.sh.pid"
 LOGFILE="/var/log/$PROGNAME.log"
 RUN_AS_USER='root'
 RUN_AS_HOME='/root'
+# If not using a virtualenv, change to VIRTUALENV=""
 VIRTUALENV="$RUN_AS_HOME/envs/$PROGNAME"
 
 function start() {

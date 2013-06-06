@@ -47,7 +47,8 @@ Then install (may require sudo)::
 
 rollbar-agent comes with an example init.d script, chkconfig compatible and tested on Fedora Linux, update-rc.d on Ubuntu Linux. To install it, symlink ``rollbar-agent-init.sh`` to ``/etc/init.d/rollbar-agent``::
 
-    ln -s /path/to/rollbar-agent/rollbar-agent-init.sh /etc/init.d/rollbar-agent
+    chmod +x /path/to/rollbar-agent-init.sh
+    ln -s /path/to/rollbar-agent-init.sh /etc/init.d/rollbar-agent
 
 On Ubuntu, you'll need to add to rc.d. Run the following::
 
@@ -63,6 +64,10 @@ On other systems, check your system's documentation for its equivalent of chkcon
 Now, start the service::
 
     service rollbar-agent start
+
+To check that it's running, tail its log file::
+
+    tail -f /var/log/rollbar-agent.log
 
 Configuration
 -------------

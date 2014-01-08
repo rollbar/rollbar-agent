@@ -76,7 +76,7 @@ Configuration options for rollbar-agent itself are in `rollbar-agent.conf`. If y
 **rollbar-agent.conf**
 At the bare minimum, you will want to change the following variables:
 
-- ``params.access_token`` -- your Rollbar access token
+- ``params.access_token`` -- your Rollbar access token, specifically an API token that allows "post_server_item"
 - ``targets`` -- white-space-separated list of files or directories (non-recursive) to process.
 - ``statefile`` -- path to a file where the state will be stored. File does not need to exist, but the directory does. This file should *not* be placed somewhere it is likely to be deleted, as that will trigger all files to be re-processed. ``/tmp`` is not a good location.
 

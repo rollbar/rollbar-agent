@@ -550,6 +550,11 @@ def build_option_parser():
 
 
 def parse_config(filename):
+    # if the filename containing rollbar agent does not exist, exit
+    if os.path.isfile(filename) is False:
+        logging.critical('The config file %s was not found.', filename)
+        sys.exit(1)
+
     defaults = {
         'statefile': '/var/cache/rollbar-agent.state',
         'sleep_time': '10',

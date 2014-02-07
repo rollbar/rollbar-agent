@@ -2,7 +2,7 @@
 """
 rollbar-agent: agent to monitor log files and send notices to Rollbar
 """
-
+import ast
 import codecs
 import ConfigParser
 import copy
@@ -42,7 +42,8 @@ LOG_LEVEL = {
     'warn': 30,
     'error': 40,
     'critical': 50,
-    'criti': 50
+    'criti': 50,
+    'crit': 50
 }
 
 
@@ -558,6 +559,7 @@ def parse_config(filename):
         'ext_whitelist': 'log, rollbar',
         'ext_blacklist': '',
         'targets': '',
+        'log_levels': str(LOG_LEVEL),
         'blacklist': '',
         'log_format.default': '',
         'log_format.patterns': '',
@@ -568,6 +570,9 @@ def parse_config(filename):
         return int(val)
     def to_list(val):
         return re.split(r'\s+', val)
+    def to_dict(val):
+        log_level_dict = ast.literal_eval(val)
+        return log_level_dict
     def to_log_level(val):
         return LOG_LEVEL[val.lower()]
     parsers = {
@@ -577,6 +582,7 @@ def parse_config(filename):
         'ext_blacklist': to_list,
         'targets': to_list,
         'blacklist': to_list,
+        'log_levels': to_dict,
         'max_file_page': to_int,
         'min_log_level': to_log_level,
     }

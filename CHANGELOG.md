@@ -1,5 +1,11 @@
 # Change Log
 
+**0.3.6**
+- Output a helpful error message if the configuration file isn't found on load
+
+**0.3.5**
+- Allow configurable log levels to be defined
+
 **0.3.4**
 - Added 'warn' log level
 

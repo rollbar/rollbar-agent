@@ -550,8 +550,8 @@ def build_option_parser():
 
 
 def parse_config(filename):
-    # if the filename containing rollbar agent does not exist, exit
-    if os.path.isfile(filename) is False:
+    # if the filename containing rollbar agent configuration does not exist, exit
+    if not os.path.isfile(filename):
         logging.critical('The config file %s was not found.', filename)
         sys.exit(1)
 

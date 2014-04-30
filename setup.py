@@ -12,7 +12,7 @@ except IOError:
 setup(
     name='rollbar-agent',
     data_files=[('', ['rollbar-agent', 'rollbar-agent-init.sh', 'rollbar-agent.conf', 'LICENSE', 'requirements.txt'])],
-    version='0.3.6',
+    version='0.3.7',
     description='Rollbar server-side agent',
     long_description=README,
     author='Rollbar, Inc.',
@@ -21,7 +21,7 @@ setup(
     classifiers=[
         "Programming Language :: Python",
         "License :: OSI Approved :: MIT License",
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Environment :: Web Environment",
         "Intended Audience :: Developers",
         "Topic :: Internet :: WWW/HTTP",

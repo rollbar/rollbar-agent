@@ -1,5 +1,8 @@
 # Change Log
 
+**0.3.7**
+- Fix issues when payloads contain unicode
+
 **0.3.6**
 - Output a helpful error message if the configuration file isn't found on load
 

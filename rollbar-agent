@@ -203,6 +203,10 @@ class Processor(object):
     def send_payload(self, payload):
         # do immediate http post
         # in the future, will do this with batches and single separate thread
+        
+        if isinstance(payload, basestring):
+            payload = payload.encode('utf8')
+        
         if options.dry_run:
             log.debug("Dry run; payload to send: %s", payload)
         else:
@@ -221,7 +225,7 @@ class RollbarFileProcessor(Processor):
     """
     def process(self, fp, filename, state):
         for line in fp:
-            log.debug("Read line. Length: %d Hash: %s", len(line), hashlib.md5(line).hexdigest())
+            log.debug("Read line. Length: %d Hash: %s", len(line), hashlib.md5(line.encode('utf8')).hexdigest())
             self._process_line(line)
 
     def _process_line(self, line):

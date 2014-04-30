@@ -42,6 +42,10 @@ Or just grab the .tar.gz::
 Then install (may require sudo)::
 
     python setup.py install
+    
+Symlink the rollbar-agent executable to /usr/local/rollbar-agent:
+
+    ln -s /usr/local/rollbar-agent /path/to/rollbar-agent/rollbar-agent
 
 **init.d script**
 

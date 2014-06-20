@@ -450,7 +450,11 @@ class ScannerThread(threading.Thread):
     def load_state(self, recreate=False):
         if not options.dry_run:
             try:
-                return shelve.open(self.config['_global']['statefile'], flag='n' if recreate else 'c')
+                # the 'n' flag will wipe away the old file if it exsits, otherwise
+                # the 'c' flag will only create the file if it doesn't exist
+                # https://docs.python.org/2/library/anydbm.html#anydbm.open
+                return shelve.open(self.config['_global']['statefile'],
+                                   flag='n' if recreate else 'c')
             except dbm.error:
                 log.error("Could not open statefile for writing. "
                     "Perhaps the directory doesn't exist? "

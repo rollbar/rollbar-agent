@@ -441,15 +441,16 @@ class ScannerThread(threading.Thread):
         for app in self.apps.itervalues():
             self.scan_app(app, apps_state)
 
-        # we've been mutating apps_state, but the shelf doesn't know about it.
-        # assign back, then close, to persist the changes.
+        # recreate the state file and save the new apps_state to trim
+        # any excess space being used by the old state file
+        state = self.load_state(recreate=True)
         state['apps'] = apps_state
         self.save_state(state)
 
-    def load_state(self):
+    def load_state(self, recreate=False):
         if not options.dry_run:
             try:
-                return shelve.open(self.config['_global']['statefile'])
+                return shelve.open(self.config['_global']['statefile'], flag='n' if recreate else 'c')
             except dbm.error:
                 log.error("Could not open statefile for writing. "
                     "Perhaps the directory doesn't exist? "
@@ -470,7 +471,14 @@ class ScannerThread(threading.Thread):
 
         filenames = find_filenames(app['config'])
 
+        removed_filenames = set(files_state.keys()) - set(filenames)
+        for filename in removed_filenames:
+            files_state.pop(filename)
+
         for filename in filenames:
+            if not os.path.exists(filename):
+                continue
+
             log.debug("Processing file %s", filename)
             stats = os.stat(filename)
             inode = stats[stat.ST_INO]

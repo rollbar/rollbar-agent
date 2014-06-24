@@ -234,7 +234,13 @@ class RollbarFileProcessor(Processor):
             log.debug("Skipping empty line")
             return
         try:
-            json.loads(line)
+            payload = json.loads(line)
+            
+            # use the agent's access token if one isn't defined for the loaded item
+            if not payload.get('access_token'):
+                payload['access_token'] = self.app['config']['params.access_token']
+                line = json.dumps(payload)
+            
         except ValueError:
             log.warning("Could not process badly formatted line: %s", line)
             return
@@ -703,4 +709,3 @@ if __name__ == '__main__':
 
     # start main loop
     main_loop()
-

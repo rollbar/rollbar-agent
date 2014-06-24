@@ -1,5 +1,8 @@
 # Change Log
 
+**0.3.9**
+- Fall back to rollbar-agent's access token if a loaded item payload doesn't contain one
+
 **0.3.8**
 - Properly clean up state file when log files are deleted
 

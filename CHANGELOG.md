@@ -1,5 +1,8 @@
 # Change Log
 
+**0.3.8**
+- Properly clean up state file when log files are deleted
+
 **0.3.7**
 - Fix issues when payloads contain unicode
 

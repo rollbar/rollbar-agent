@@ -480,11 +480,14 @@ class ScannerThread(threading.Thread):
             files_state.pop(filename)
 
         for filename in filenames:
-            if not os.path.exists(filename):
+            try:
+                stats = os.stat(filename)
+            except OSError:
+                log.debug("File %s no longer exists, continuing...", filename)
                 continue
 
             log.debug("Processing file %s", filename)
-            stats = os.stat(filename)
+
             inode = stats[stat.ST_INO]
             mtime = stats[stat.ST_MTIME]
             if filename in files_state:

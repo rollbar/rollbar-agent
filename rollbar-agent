@@ -444,6 +444,9 @@ class ScannerThread(threading.Thread):
         state = self.load_state()
         apps_state = state.get('apps', {})
 
+        # Close the state file before recreating it
+        self.save_state(state)
+
         for app in self.apps.itervalues():
             self.scan_app(app, apps_state)
 

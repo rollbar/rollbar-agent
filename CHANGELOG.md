@@ -1,5 +1,8 @@
 # Change Log
 
+**0.3.10**
+- Fix a bug where we weren't releasing the state file before recreating it, (#17).
+
 **0.3.9**
 - Fall back to rollbar-agent's access token if a loaded item payload doesn't contain one
 

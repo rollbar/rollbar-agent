@@ -45,7 +45,7 @@ Then install (may require sudo)::
     
 Symlink the rollbar-agent executable to /usr/local/rollbar-agent::
 
-    ln -s /usr/local/rollbar-agent /path/to/rollbar-agent/rollbar-agent
+    ln -s /path/to/rollbar-agent/rollbar-agent /usr/local/rollbar-agent
 
 **init.d script**
 

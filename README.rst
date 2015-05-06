@@ -35,9 +35,9 @@ If you're comfortable with Git::
 
 Or just grab the .tar.gz::
 
-    wget https://github.com/rollbar/rollbar-agent/archive/v0.3.9.tar.gz
-    tar -xzf v0.3.9
-    cd rollbar-agent-0.3.9
+    wget https://github.com/rollbar/rollbar-agent/archive/v0.3.11.tar.gz
+    tar -xzf v0.3.11
+    cd rollbar-agent-0.3.11
 
 Then install (may require sudo)::
 
@@ -90,6 +90,10 @@ Setting the following variables will improve integration:
 
 - ``params.root`` -- path to your code root
 - ``params.branch`` -- the current branch
+
+If you're using rollbar-agent alongside rollbar-php, you'll want to enable:
+
+- ``delete_processed_files`` -- when true, files are deleted once processing is complete. Default false.
 
 Other options are documented in the sample config file.
 

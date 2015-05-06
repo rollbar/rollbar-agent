@@ -1,7 +1,10 @@
 # Change Log
 
+**0.3.11**
+- Add option to delete files once they are fully processed. See [#22](https://github.com/rollbar/rollbar-agent/pull/22)
+
 **0.3.10**
-- Fix a bug where we weren't releasing the state file before recreating it, (#17).
+- Fix a bug where we weren't releasing the state file before recreating it. See [#17](https://github.com/rollbar/rollbar-agent/issues/17)
 
 **0.3.9**
 - Fall back to rollbar-agent's access token if a loaded item payload doesn't contain one

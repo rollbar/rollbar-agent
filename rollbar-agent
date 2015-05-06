@@ -602,7 +602,7 @@ def parse_config(filename):
         'log_format.default': '',
         'log_format.patterns': '',
         'scrub_regex_patterns': '',
-        'delete_processed_files': False,
+        'delete_processed_files': 'false',
     }
 
     def to_int(val):

@@ -529,6 +529,11 @@ class ScannerThread(threading.Thread):
             log.debug("File %s new pos %d", filename, new_pos)
             file_state['pos'] = new_pos
 
+        if self.config['delete_processed_files'] and new_pos == os.stat(filename).st_size:
+            # If we've finished reading the whole file and our config was set up to delete logs
+            # after processing them, remove the file here
+            os.remove(filename)
+
 
 def register_signal_handlers(stop_event):
     def signal_handler(signum, frame):
@@ -597,6 +602,7 @@ def parse_config(filename):
         'log_format.default': '',
         'log_format.patterns': '',
         'scrub_regex_patterns': '',
+        'delete_processed_files': False,
     }
 
     def to_int(val):
@@ -608,6 +614,9 @@ def parse_config(filename):
         return log_level_dict
     def to_log_level(val):
         return LOG_LEVEL[val.lower()]
+    def to_bool(val):
+        return val.lower() == 'true'
+
     parsers = {
         'sleep_time': to_int,
         'timeout': to_int,
@@ -618,6 +627,7 @@ def parse_config(filename):
         'log_levels': to_dict,
         'max_file_page': to_int,
         'min_log_level': to_log_level,
+        'delete_processed_files': to_bool,
     }
 
     cp = ConfigParser.SafeConfigParser(defaults)

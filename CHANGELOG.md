@@ -1,5 +1,8 @@
 # Change Log
 
+**0.3.12**
+- Fix a bug introduced by the delete files option. See [#23](https://github.com/rollbar/rollbar-agent/pull/23)
+
 **0.3.11**
 - Add option to delete files once they are fully processed. See [#22](https://github.com/rollbar/rollbar-agent/pull/22)
 

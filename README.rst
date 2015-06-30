@@ -1,30 +1,47 @@
 rollbar-agent
 =============
-A daemon to monitor log files and push messages to Rollbar_.
+
+In most cases you should try to use the Rollbar notifier for the language and framework you're using.
+See https://rollbar.com/docs for a list of supported languages and links to notifiers.
+
+If it's not possible to use a notifier, rollbar-agent is a Python daemon that can monitor your log 
+files and push messages to Rollbar.
+
+Installing and configuring rollbar-agent will be much easier if you have a basic understanding of
+Python virtualenvs and are comfortable editing the configuration files that control services
+on your OS.
 
 
 Requirements
 ------------
 rollbar-agent requires:
 
-- A unix-like system (tested on Fedora Linux and Mac OS X)
+- A unix-like system (tested on Fedora and Ubuntu Linux and Mac OS X)
 - Python 2.6+
 - requests 0.13.1+ (will be installed by pip or setup.py, below)
 - a Rollbar_ account
 
 
-Installation
-------------
+Set up a virtualenv
+-------------------
+
+You can install rollbar-agent by using pip, by checking out the code from the GitHub repository, or by
+downloading a tar file. In each case, you'll be installing rollbar-agent into a Python virtualenv. If
+you don't already have an appropriate virtualenv set up, you should create one now. For more information
+on Python virtual environments, see http://docs.python-guide.org/en/latest/dev/virtualenvs/
+
+Install rollbar-agent
+---------------------
+
+Once you've created and activated your virualenv, install the rollbar-agent code and configuration files
+into that environment using your preferred method below. Each method will install the rollbar-agent library
+and put the configuration and service start up files you'll need into the root directory of your virtualenv.  
 
 **Installing with pip**
 
-If you're familiar with pip, use this option. (If not, see the "Installing from source" method below.)
-
-In a virtualenv, install like so::
+If you're familiar with pip, you can install rollbar-agent with::
 
     pip install rollbar-agent
-
-This will install the rollbar-agent files in the root directory of your virtualenv. 
 
 **Installing from source**
 
@@ -42,17 +59,28 @@ Or just grab the .tar.gz::
 Then install (may require sudo)::
 
     python setup.py install
-    
+
+
+Set up the rollbar-agent service
+--------------------------------
+
 Symlink the rollbar-agent executable to /usr/local/rollbar-agent::
 
-    ln -s /path/to/rollbar-agent/rollbar-agent /usr/local/rollbar-agent
+    ln -s /path/to/virtualenv/rollbar-agent /usr/local/rollbar-agent
+
+and symlink the rollbar-agent configuration file to /etc/rollbar-agent.conf::
+
+    ln -s /path/to/virtualenv/rollbar-agent.conf /etc/rollbar-agent.conf
 
 **init.d script**
 
-rollbar-agent comes with an example init.d script, chkconfig compatible and tested on Fedora Linux, update-rc.d on Ubuntu Linux. To install it, symlink ``rollbar-agent-init.sh`` to ``/etc/init.d/rollbar-agent``::
+rollbar-agent comes with an example init.d script, chkconfig compatible and tested on Fedora Linux, update-rc.d on Ubuntu Linux. You'll need
+to edit this script and make sure the ``VIRTUALENV`` environment variable contains the path to the virtual environment you set up.
 
-    chmod +x /path/to/rollbar-agent-init.sh
-    ln -s /path/to/rollbar-agent-init.sh /etc/init.d/rollbar-agent
+Once you've edited the rollbar-agent-init.sh script, symlink ``rollbar-agent-init.sh`` to ``/etc/init.d/rollbar-agent``::
+
+    chmod +x /path/to/virtualenv/rollbar-agent-init.sh
+    ln -s /path/to/virtualenv/rollbar-agent-init.sh /etc/init.d/rollbar-agent
 
 On Ubuntu, you'll need to add to rc.d. Run the following::
 

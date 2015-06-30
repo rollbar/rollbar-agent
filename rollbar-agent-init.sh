@@ -24,15 +24,13 @@ PROGNAME='rollbar-agent'
 PIDFILE="/var/run/$PROGNAME.pid"
 ALT_PIDFILE="/var/run/$PROGNAME.sh.pid"
 LOGFILE="/var/log/$PROGNAME.log"
-RUN_AS_USER='root'
-RUN_AS_HOME='/root'
 # If not using a virtualenv, change to VIRTUALENV=""
-VIRTUALENV="$RUN_AS_HOME/envs/$PROGNAME"
+VIRTUALENV="PATH_TO_YOUR_VIRTUALENV"
 
 function start() {
   echo "Starting $PROGRAM..."
-  if [ -f $PIDFILE ]; then
-    echo "$PIDFILE exists, exiting..."
+  if [ -f $PIDFILE ] && kill -0 $(cat $PIDFILE); then
+    echo "Service already running: $PROGNAME"
     exit 1
   fi
 

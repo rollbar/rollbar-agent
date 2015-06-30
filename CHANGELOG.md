@@ -1,5 +1,8 @@
 # Change Log
 
+**0.4.0**
+- Fix a few installation issues, and bump minor version.
+
 **0.3.12**
 - Fix a bug introduced by the delete files option. See [#23](https://github.com/rollbar/rollbar-agent/pull/23)
 

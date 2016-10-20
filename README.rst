@@ -1,11 +1,30 @@
 rollbar-agent
 =============
 
-In most cases you should try to use the Rollbar notifier for the language and framework you're using.
-See https://rollbar.com/docs for a list of supported languages and links to notifiers.
+rollbar-agent is a Python daemon that can monitor log files and push messages to Rollbar. It can monitor:
 
-If it's not possible to use a notifier, rollbar-agent is a Python daemon that can monitor your log 
-files and push messages to Rollbar.
+- ``.rollbar`` files written by a Rollbar notifier library (currently supported in rollbar-php, pyrollbar, and rollbar-agent)
+- Python-style log files
+
+(Other log files formats are currently not supported out of the box.)
+
+Who Should Use rollbar-agent
+----------------------------
+
+If you are trying to monitor your application's log files, we recommend using a Rollbar notifier library instead
+(or in addition, in the case of PHP--see next paragraph). The Rollbar notifiers are easier to install and use and will gather more
+context about each error. See https://rollbar.com/docs for a list of supported languages and links to notifiers.
+
+Today, the primary use of rollbar-agent is to provide durable, asynchronous reporting from PHP applications
+that are instrumented with rollbar-php. If you are using PHP and performance is important, you'll want to set up
+rollbar-agent.
+
+For almost everyone else, rollbar-agent is more complexity than needed when getting started; most other platforms
+provide easier ways to do asynchronous reporting that don't require running a separate process. However, rollbar-agent
+may still be desirable if:
+
+- you want to minimize work done in your application process, even if it's in a background thread
+- durability is important (i.e. it's important that reports to Rollbar succeed even if the main process dies, or that they eventually succeed if the network is temporarily unavailable)
 
 Installing and configuring rollbar-agent will be much easier if you have a basic understanding of
 Python virtualenvs and are comfortable editing the configuration files that control services

@@ -1,5 +1,8 @@
 # Change Log
 
+**0.4.1**
+- Improve internal error handling. See [#35](https://github.com/rollbar/rollbar-agent/pull/35)
+
 **0.4.0**
 - Fix a few installation issues, and bump minor version.
 

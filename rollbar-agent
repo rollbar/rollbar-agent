@@ -447,14 +447,17 @@ class ScannerThread(threading.Thread):
         # Close the state file before recreating it
         self.save_state(state)
 
-        for app in self.apps.itervalues():
-            self.scan_app(app, apps_state)
-
-        # recreate the state file and save the new apps_state to trim
-        # any excess space being used by the old state file
-        state = self.load_state(recreate=True)
-        state['apps'] = apps_state
-        self.save_state(state)
+        try:
+            for app in self.apps.itervalues():
+                self.scan_app(app, apps_state)
+        except:
+            log.exception("Caught exception in ScannerThread.scan_all() loop")
+        finally:
+            # recreate the state file and save the new apps_state to trim
+            # any excess space being used by the old state file
+            state = self.load_state(recreate=True)
+            state['apps'] = apps_state
+            self.save_state(state)
 
     def load_state(self, recreate=False):
         if not options.dry_run:

@@ -339,12 +339,14 @@ class LogFileProcessor(Processor):
         state['current_message'] = current_message
 
     def _process_message(self, message, filename):
+        # sanitize level
+        message['level'] = (message.get('level') or '').lower()
+
         # if the level is below our threshold, ignore it
-        level_string = (message.get('level') or '').lower()
-        level = LOG_LEVEL.get(level_string, 0)
+        level = LOG_LEVEL.get(message['level'], 0)
         min_level = self.app['config']['min_log_level']
         if level < min_level:
-            log.debug("Skipping message; level: %s min_level: %d", level_string, min_level)
+            log.debug("Skipping message; level: %s min_level: %d", message['level'], min_level)
             return
 
         payload = self._build_payload(message, filename)
@@ -361,7 +363,7 @@ class LogFileProcessor(Processor):
         data = {
             'timestamp': message['timestamp'],
             'environment': app_config['params.environment'],
-            'level': message['level'].lower(),
+            'level': message['level'],
             'notifier': {
                 'name': 'rollbar-agent',
                 'rollbar_agent_app': self.app['name'],

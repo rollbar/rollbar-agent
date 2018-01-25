@@ -49,6 +49,13 @@ LOG_LEVEL = {
 
 ## utils
 
+terminal_character_attribute_pattern = re.compile(r'\x1b\[[0-9;]*m')
+
+def clean_line(app_config, line):
+    if app_config.get('filter_chr_attr_sequences'):
+        return terminal_character_attribute_pattern.sub("", line)
+    return line
+
 def parse_timestamp(format, s):
     try:
         ts = time.mktime(time.strptime(s, format))
@@ -306,6 +313,7 @@ class LogFileProcessor(Processor):
 
         for line in fp:
             # does this look like the beginning of a new log message?
+            line = clean_line(self.app['config'], line)
             match = parser['regex'].match(line)
             if match:
                 if current_message['data']:
@@ -608,6 +616,7 @@ def parse_config(filename):
         'log_format.patterns': '',
         'scrub_regex_patterns': '',
         'delete_processed_files': 'false',
+        'filter_chr_attr_sequences': 'false',
     }
 
     def to_int(val):
@@ -633,6 +642,7 @@ def parse_config(filename):
         'max_file_page': to_int,
         'min_log_level': to_log_level,
         'delete_processed_files': to_bool,
+        'filter_chr_attr_sequences': to_bool,
     }
 
     cp = ConfigParser.SafeConfigParser(defaults)

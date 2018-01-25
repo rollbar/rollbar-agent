@@ -3,3 +3,4 @@
 rollbar_agent.egg-info/
 dist/
 .idea
+*.nix

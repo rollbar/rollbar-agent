@@ -142,6 +142,9 @@ If you're using rollbar-agent alongside rollbar-php, you'll want to enable:
 
 - ``delete_processed_files`` -- when true, files are deleted once processing is complete. Default false.
 
+If your logs are capturing terminal escape sequences such as color / boldness, you may want to set
+``filter_chr_attr_sequences = true``.  This will clean all output of character attribute terminal sequences.
+
 Other options are documented in the sample config file.
 
 **rollbar-agent-init.sh**

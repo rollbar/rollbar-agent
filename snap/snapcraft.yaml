@@ -1,0 +1,21 @@
+name: rollbar-agent
+version: master
+summary: A daemon to monitor log files and push messages to Rollbar
+description: |
+  rollbar-agent is a Python daemon that can monitor log files and push messages
+  to Rollbar. It can monitor .rollbar files and Python-style log files
+
+
+grade: devel # must be 'stable' to release into candidate/stable channels
+confinement: classic
+
+apps:
+  rollbar-agent:
+    command: rollbar-agent
+
+parts:
+  rollbar-agent:
+    source: .
+    plugin: python
+    python-version: python2
+    requirements: requirements.txt

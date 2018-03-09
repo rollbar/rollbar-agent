@@ -219,7 +219,11 @@ class Processor(object):
         else:
             log.debug("Sending payload: %s", payload)
             config = self.app['config']
-            resp = requests.post(config['endpoint'], data=payload, timeout=config['timeout'])
+            resp = requests.post(
+                    config['endpoint'],
+                    data=payload,
+                    timeout=config['timeout'],
+                    headers={"content-type": "application/json"})
             if resp.status_code != 200:
                 log.warning("Unexpected response from Rollbar API. Code: %s Body: %s",
                     resp.status_code, resp.text)

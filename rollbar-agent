@@ -280,7 +280,9 @@ class LogFileProcessor(Processor):
             pair = pair.strip()
             if not pair:
                 continue
-            pattern, format = pair.split(" ", 1)
+            # Using None as the separator means
+            # "runs of consecutive whitespace are regarded as a single separator"
+            pattern, format = pair.split(None, 1)
             if format in self.scanner.config['_formats']:
                 pattern = re.compile(fnmatch.translate(pattern))
                 self.pattern_parsers.append((pattern, self.scanner.config['_formats'][format]))

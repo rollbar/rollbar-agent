@@ -12,7 +12,7 @@ except IOError:
 setup(
     name='rollbar-agent',
     data_files=[('', ['rollbar-agent', 'rollbar-agent-init.sh', 'rollbar-agent.conf', 'LICENSE', 'requirements.txt'])],
-    version='0.4.2',
+    version='0.4.3',
     description='Rollbar server-side agent',
     long_description=README,
     author='Rollbar, Inc.',

@@ -71,9 +71,9 @@ If you're comfortable with Git::
 
 Or just grab the .tar.gz::
 
-    wget https://github.com/rollbar/rollbar-agent/archive/v0.4.1.tar.gz
-    tar -xzf v0.4.1
-    cd rollbar-agent-0.4.1
+    wget https://github.com/rollbar/rollbar-agent/archive/v0.4.3.tar.gz
+    tar -xzf v0.4.3
+    cd rollbar-agent-0.4.3
 
 Then install (may require sudo)::
 

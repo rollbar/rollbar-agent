@@ -1,5 +1,10 @@
 # Change Log
 
+**0.4.3**
+- add content-type: application/json to post request [#39](https://github.com/rollbar/rollbar-agent/pull/39)
+- Support multiple spaces in in log_format.patterns [#38](https://github.com/rollbar/rollbar-agent/pull/38)
+- Add option to filter character attribute modifying terminal escape sequences [#36](https://github.com/rollbar/rollbar-agent/pull/36)
+
 **0.4.1**
 - Improve internal error handling. See [#35](https://github.com/rollbar/rollbar-agent/pull/35)
 

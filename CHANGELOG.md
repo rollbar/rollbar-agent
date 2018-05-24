@@ -1,5 +1,7 @@
 # Change Log
 
+The change log has moved to this repo's [GitHub Releases Page](https://github.com/rollbar/rollbar-agent/releases).
+
 **0.4.3**
 - add content-type: application/json to post request [#39](https://github.com/rollbar/rollbar-agent/pull/39)
 - Support multiple spaces in in log_format.patterns [#38](https://github.com/rollbar/rollbar-agent/pull/38)

@@ -90,17 +90,17 @@ def should_process_file(app_config, filename):
     if not os.path.isfile(filename):
         return False
 
-    if filename in app_config['blacklist']:
+    if filename in app_config['blocklist']:
         return False
 
     if filename in app_config['targets']:
         return True
 
     ext = filename.split('.')[-1]
-    if app_config['ext_whitelist']:
-        return ext in app_config['ext_whitelist']
+    if app_config['ext_safelist']:
+        return ext in app_config['ext_safelist']
 
-    if ext in app_config['ext_blacklist']:
+    if ext in app_config['ext_blocklist']:
         return False
 
     return True
@@ -613,11 +613,11 @@ def parse_config(filename):
         'endpoint': DEFAULT_ENDPOINT,
         'timeout': str(DEFAULT_TIMEOUT),
         'root': os.getcwd(),
-        'ext_whitelist': 'log, rollbar',
-        'ext_blacklist': '',
+        'ext_safelist': 'log, rollbar',
+        'ext_blocklist': '',
         'targets': '',
         'log_levels': str(LOG_LEVEL),
-        'blacklist': '',
+        'blocklist': '',
         'log_format.default': '',
         'log_format.patterns': '',
         'scrub_regex_patterns': '',
@@ -640,10 +640,10 @@ def parse_config(filename):
     parsers = {
         'sleep_time': to_int,
         'timeout': to_int,
-        'ext_whitelist': to_list,
-        'ext_blacklist': to_list,
+        'ext_safelist': to_list,
+        'ext_blocklist': to_list,
         'targets': to_list,
-        'blacklist': to_list,
+        'blocklist': to_list,
         'log_levels': to_dict,
         'max_file_page': to_int,
         'min_log_level': to_log_level,

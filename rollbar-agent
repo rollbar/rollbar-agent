@@ -210,10 +210,10 @@ class Processor(object):
     def send_payload(self, payload):
         # do immediate http post
         # in the future, will do this with batches and single separate thread
-        
+
         if isinstance(payload, basestring):
             payload = payload.encode('utf8')
-        
+
         if options.dry_run:
             log.debug("Dry run; payload to send: %s", payload)
         else:
@@ -246,12 +246,12 @@ class RollbarFileProcessor(Processor):
             return
         try:
             payload = json.loads(line)
-            
+
             # use the agent's access token if one isn't defined for the loaded item
             if not payload.get('access_token'):
                 payload['access_token'] = self.app['config']['params.access_token']
                 line = json.dumps(payload)
-            
+
         except ValueError:
             log.warning("Could not process badly formatted line: %s", line)
             return
@@ -264,8 +264,12 @@ class LogFileProcessor(Processor):
     Processor for general log files - currently works reasonably well for paste/pylons log files.
     Some events we want will span multiple lines.
     """
-    # tuple of (pattern, strptime format)
-    _default_message_start_parser = (re.compile(r'(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),(\d+)?\s+(?P<level>[A-Z]+)\s+(?P<title>.*$)'), '%Y-%m-%d %H:%M:%S')
+    # dictionary of (pattern, strptime format and name)
+    _default_message_start_parser = {
+        'regex': re.compile(r'(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),(\d+)?\s+(?P<level>[A-Z]+)\s+(?P<title>.*$)'),
+        'datefmt': '%Y-%m-%d %H:%M:%S',
+        'name': 'default parser'
+    }
 
     def __init__(self, *args, **kw):
         super(LogFileProcessor, self).__init__(*args, **kw)

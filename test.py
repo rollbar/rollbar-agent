@@ -19,7 +19,7 @@ class TestDefaultMessageStartParserUsage(unittest.TestCase):
            }
 
     def test_process_log_debug_with_format_name(self):
-        # check if default_parser uses valid format name provided in the config
+        # check if self.default_parser uses valid format name provided in the config
         config = {'_formats': {'pyramid': {'name': 'pyramid'}}}
 
         scanner = FakeScanner(config)
@@ -29,9 +29,9 @@ class TestDefaultMessageStartParserUsage(unittest.TestCase):
         self.assertEqual('pyramid', new_processor.default_parser['name'])
 
     def test_process_log_debug_without_format_name(self):
-        # check if default_parser can access _default_message_start_parser if format name not provided in the config
+        # check if self.default_parser can access _default_message_start_parser if format name not provided in config
         config = {'_formats': {}}
-        
+
         scanner = FakeScanner(config)
 
         new_processor = rollbar_agent.LogFileProcessor(scanner, self.app)

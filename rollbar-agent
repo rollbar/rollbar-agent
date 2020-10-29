@@ -4,9 +4,9 @@ rollbar-agent: agent to monitor log files and send notices to Rollbar
 """
 import ast
 import codecs
-import ConfigParser
+import configparser
 import copy
-import dbm
+import dbm.ndbm
 import fnmatch
 import hashlib
 import json
@@ -140,7 +140,7 @@ def build_python_log_format_parser(format, datefmt):
     }
 
     regex_str = '^' + re.escape(format) + '$'
-    for key, val in known_keys.iteritems():
+    for key, val in known_keys.items():
         search = re.escape(key)
         replacement = "(?P<%s>%s)" % val
         regex_str = regex_str.replace(search, replacement)
@@ -177,7 +177,7 @@ def datefmt_to_regex(datefmt):
         '%Z': r'[A-Z]{3}',  # time zone name
     }
 
-    for key, val in replacements.iteritems():
+    for key, val in replacements.items():
         datefmt = datefmt.replace(key, val)
 
     # last: replace %% with %
@@ -211,7 +211,7 @@ class Processor(object):
         # do immediate http post
         # in the future, will do this with batches and single separate thread
 
-        if isinstance(payload, basestring):
+        if isinstance(payload, str):
             payload = payload.encode('utf8')
 
         if options.dry_run:
@@ -318,7 +318,7 @@ class LogFileProcessor(Processor):
 
             try:
                 scrub_regexes.append(re.compile(pattern))
-            except Exception, e:
+            except Exception as e:
                 log.warning("Could not compile regex pattern: %s" % pattern)
 
         for line in fp:
@@ -342,7 +342,7 @@ class LogFileProcessor(Processor):
             for regex in scrub_regexes:
                 try:
                     line = regex.sub('******', line)
-                except Exception, e:
+                except Exception as e:
                     log.warning("Could not use regex %s on line %s" % (regex, line))
 
             current_message['data'].append(line)
@@ -429,7 +429,7 @@ class ScannerThread(threading.Thread):
         self.config = config
 
         self.apps = {}
-        for app_name, app_config in config.iteritems():
+        for app_name, app_config in config.items():
             if app_name.startswith('_'):
                 continue
             self.apps[app_name] = {
@@ -468,7 +468,7 @@ class ScannerThread(threading.Thread):
         self.save_state(state)
 
         try:
-            for app in self.apps.itervalues():
+            for app in self.apps.values():
                 self.scan_app(app, apps_state)
         except:
             log.exception("Caught exception in ScannerThread.scan_all() loop")
@@ -487,7 +487,7 @@ class ScannerThread(threading.Thread):
                 # https://docs.python.org/2/library/anydbm.html#anydbm.open
                 return shelve.open(self.config['_global']['statefile'],
                                    flag='n' if recreate else 'c')
-            except dbm.error:
+            except dbm.ndbm.error:
                 log.error("Could not open statefile for writing. "
                     "Perhaps the directory doesn't exist? "
                     "You can configure this by modifying the 'statefile' in rollbar-agent.conf. "
@@ -575,7 +575,7 @@ def main_loop():
 
     # sleep until the thread is killed
     # have to sleep in a loop, instead of worker.join(), otherwise we'll never get the signals
-    while scanner.isAlive():
+    while scanner.is_alive():
         time.sleep(1)
 
     log.info("Shutdown complete")
@@ -655,7 +655,7 @@ def parse_config(filename):
         'filter_chr_attr_sequences': to_bool,
     }
 
-    cp = ConfigParser.SafeConfigParser(defaults)
+    cp = configparser.ConfigParser(defaults)
     cp.read([filename])
 
     config = {'_formats': {}}
@@ -679,7 +679,7 @@ def parse_config(filename):
             format_spec = cp.get(section_name, 'format', True)
             try:
                 format_datefmt = cp.get(section_name, 'datefmt', True)
-            except ConfigParser.NoOptionError:
+            except configparser.NoOptionError:
                 format_datefmt = DEFAULT_DATEFMT
 
             if format_type != 'python':
@@ -693,7 +693,7 @@ def parse_config(filename):
 
     global_config = cp.defaults()
     config['_global'] = {}
-    for option_name, raw_value in global_config.iteritems():
+    for option_name, raw_value in global_config.items():
         if option_name in parsers:
             value = parsers[option_name](raw_value)
         else:
@@ -706,17 +706,17 @@ def parse_config(filename):
 def validate_config(config):
     errors = []
     required_vars = ['params.access_token', 'targets']
-    for app_name, app_config in config.iteritems():
+    for app_name, app_config in config.items():
         if app_name.startswith('_'):
             continue
         for var_name in required_vars:
             if not app_config.get('params.access_token'):
                 errors.append("app:%s is missing required var %s" % (app_name, var_name))
     if errors:
-        print "CONFIGURATION ERRORS"
+        print ("CONFIGURATION ERRORS")
         for error in errors:
-            print error
-        print
+            print (error)
+        print()
         sys.exit(1)
 
 

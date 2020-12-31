@@ -36,7 +36,7 @@ Requirements
 rollbar-agent requires:
 
 - A unix-like system (tested on Fedora and Ubuntu Linux and Mac OS X)
-- Python 2.6+
+- Python 2.6+ (Python 3 not supported)
 - requests 0.13.1+ (will be installed by pip or setup.py, below)
 - a Rollbar_ account
 

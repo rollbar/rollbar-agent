@@ -64,6 +64,7 @@ def clean_line(app_config, line):
         return terminal_character_attribute_pattern.sub("", line)
     return line
 
+
 def parse_timestamp(format, s):
     try:
         ts = time.mktime(time.strptime(s, format))

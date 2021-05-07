@@ -229,7 +229,11 @@ class Processor(object):
         # do immediate http post
         # in the future, will do this with batches and single separate thread
 
-        if isinstance(payload, basestring):
+        if sys.version_info[0] >= 3:
+            payload_is_str = isinstance(payload, str)
+        else:
+            payload_is_str = isinstance(payload, basestring)
+        if payload_is_str:
             payload = payload.encode('utf8')
 
         if options.dry_run:

@@ -59,6 +59,15 @@ LOG_LEVEL = {
 
 terminal_character_attribute_pattern = re.compile(r'\x1b\[[0-9;]*m')
 
+
+def iteritems(_dict):
+    return _dict.items() if not hasattr(_dict, 'iteritems') else _dict.iteritems()
+
+
+def itervalues(_dict):
+    return _dict.values() if not hasattr(_dict, 'itervalues') else _dict.itervalues()
+
+
 def clean_line(app_config, line):
     if app_config.get('filter_chr_attr_sequences'):
         return terminal_character_attribute_pattern.sub("", line)
@@ -149,7 +158,7 @@ def build_python_log_format_parser(format, datefmt):
     }
 
     regex_str = '^' + re.escape(format) + '$'
-    for key, val in known_keys.iteritems():
+    for key, val in iteritems(known_keys):
         search = re.escape(key)
         replacement = "(?P<%s>%s)" % val
         regex_str = regex_str.replace(search, replacement)
@@ -186,7 +195,7 @@ def datefmt_to_regex(datefmt):
         '%Z': r'[A-Z]{3}',  # time zone name
     }
 
-    for key, val in replacements.iteritems():
+    for key, val in iteritems(replacements):
         datefmt = datefmt.replace(key, val)
 
     # last: replace %% with %
@@ -438,7 +447,7 @@ class ScannerThread(threading.Thread):
         self.config = config
 
         self.apps = {}
-        for app_name, app_config in config.iteritems():
+        for app_name, app_config in iteritems(config):
             if app_name.startswith('_'):
                 continue
             self.apps[app_name] = {
@@ -477,7 +486,7 @@ class ScannerThread(threading.Thread):
         self.save_state(state)
 
         try:
-            for app in self.apps.itervalues():
+            for app in itervalues(self.apps):
                 self.scan_app(app, apps_state)
         except:
             log.exception("Caught exception in ScannerThread.scan_all() loop")
@@ -706,7 +715,7 @@ def parse_config(filename):
 
     global_config = cp.defaults()
     config['_global'] = {}
-    for option_name, raw_value in global_config.iteritems():
+    for option_name, raw_value in iteritems(global_config):
         if option_name in parsers:
             value = parsers[option_name](raw_value)
         else:
@@ -719,7 +728,7 @@ def parse_config(filename):
 def validate_config(config):
     errors = []
     required_vars = ['params.access_token', 'targets']
-    for app_name, app_config in config.iteritems():
+    for app_name, app_config in iteritems(config):
         if app_name.startswith('_'):
             continue
         for var_name in required_vars:

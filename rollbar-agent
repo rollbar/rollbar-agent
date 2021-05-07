@@ -4,7 +4,6 @@ rollbar-agent: agent to monitor log files and send notices to Rollbar
 """
 import ast
 import codecs
-import ConfigParser
 import copy
 import dbm
 import fnmatch
@@ -21,6 +20,11 @@ import stat
 import sys
 import threading
 import time
+
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
 
 import requests
 
@@ -655,7 +659,10 @@ def parse_config(filename):
         'filter_chr_attr_sequences': to_bool,
     }
 
-    cp = ConfigParser.SafeConfigParser(defaults)
+    if sys.version_info >= (3, 2):
+        cp = configparser.ConfigParser(defaults)
+    else:
+        cp = configparser.SafeConfigParser(defaults)
     cp.read([filename])
 
     config = {'_formats': {}}
@@ -679,7 +686,7 @@ def parse_config(filename):
             format_spec = cp.get(section_name, 'format', True)
             try:
                 format_datefmt = cp.get(section_name, 'datefmt', True)
-            except ConfigParser.NoOptionError:
+            except configparser.NoOptionError:
                 format_datefmt = DEFAULT_DATEFMT
 
             if format_type != 'python':

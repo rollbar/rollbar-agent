@@ -1,7 +1,15 @@
+import sys
+import types
 import unittest
-import imp
 
-rollbar_agent = imp.load_source('rollbar-agent', './rollbar-agent')
+if sys.version_info >= (3, 4):
+    from importlib.machinery import SourceFileLoader
+    loader = SourceFileLoader('rollbar-agent', './rollbar-agent')
+    rollbar_agent = types.ModuleType(loader.name)
+    loader.exec_module(rollbar_agent)
+else:
+    import imp
+    rollbar_agent = imp.load_source('rollbar-agent', './rollbar-agent')
 
 
 class FakeScanner:

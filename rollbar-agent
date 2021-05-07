@@ -5,7 +5,6 @@ rollbar-agent: agent to monitor log files and send notices to Rollbar
 import ast
 import codecs
 import copy
-import dbm
 import fnmatch
 import hashlib
 import json
@@ -25,6 +24,11 @@ try:
     import configparser
 except ImportError:
     import ConfigParser as configparser
+
+try:
+    import dbm.ndbm as dbm
+except ImportError:
+    import dbm
 
 import requests
 
@@ -490,7 +494,8 @@ class ScannerThread(threading.Thread):
                 # the 'c' flag will only create the file if it doesn't exist
                 # https://docs.python.org/2/library/anydbm.html#anydbm.open
                 return shelve.open(self.config['_global']['statefile'],
-                                   flag='n' if recreate else 'c')
+                                   flag='n' if recreate else 'c',
+                                   protocol=0)
             except dbm.error:
                 log.error("Could not open statefile for writing. "
                     "Perhaps the directory doesn't exist? "

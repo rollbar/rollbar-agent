@@ -326,7 +326,7 @@ class LogFileProcessor(Processor):
 
             try:
                 scrub_regexes.append(re.compile(pattern))
-            except Exception, e:
+            except Exception as e:
                 log.warning("Could not compile regex pattern: %s" % pattern)
 
         for line in fp:
@@ -350,7 +350,7 @@ class LogFileProcessor(Processor):
             for regex in scrub_regexes:
                 try:
                     line = regex.sub('******', line)
-                except Exception, e:
+                except Exception as e:
                     log.warning("Could not use regex %s on line %s" % (regex, line))
 
             current_message['data'].append(line)
@@ -584,7 +584,7 @@ def main_loop():
 
     # sleep until the thread is killed
     # have to sleep in a loop, instead of worker.join(), otherwise we'll never get the signals
-    while scanner.isAlive():
+    while scanner.is_alive():
         time.sleep(1)
 
     log.info("Shutdown complete")
@@ -725,10 +725,10 @@ def validate_config(config):
             if not app_config.get('params.access_token'):
                 errors.append("app:%s is missing required var %s" % (app_name, var_name))
     if errors:
-        print "CONFIGURATION ERRORS"
+        print("CONFIGURATION ERRORS")
         for error in errors:
-            print error
-        print
+            print(error)
+        print()
         sys.exit(1)
 
 

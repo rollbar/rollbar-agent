@@ -509,7 +509,7 @@ class ScannerThread(threading.Thread):
                 # https://docs.python.org/2/library/anydbm.html#anydbm.open
                 return shelve.open(self.config['_global']['statefile'],
                                    flag='n' if recreate else 'c',
-                                   protocol=0)
+                                   protocol=self.config['_global']['state_proto'])
             except dbm.error:
                 log.error("Could not open statefile for writing. "
                     "Perhaps the directory doesn't exist? "
@@ -636,6 +636,7 @@ def parse_config(filename):
 
     defaults = {
         'statefile': '/var/cache/rollbar-agent.state',
+        'state_proto': '0',
         'sleep_time': '10',
         'endpoint': DEFAULT_ENDPOINT,
         'timeout': str(DEFAULT_TIMEOUT),
@@ -665,6 +666,7 @@ def parse_config(filename):
         return val.lower() == 'true'
 
     parsers = {
+        'state_proto': to_int,
         'sleep_time': to_int,
         'timeout': to_int,
         'ext_whitelist': to_list,

@@ -702,9 +702,9 @@ def parse_config(filename):
             format = {'name': format_name}
 
             format_type = cp.get(section_name, 'type')
-            format_spec = cp.get(section_name, 'format', True)
+            format_spec = cp.get(section_name, 'format', raw=True)
             try:
-                format_datefmt = cp.get(section_name, 'datefmt', True)
+                format_datefmt = cp.get(section_name, 'datefmt', raw=True)
             except configparser.NoOptionError:
                 format_datefmt = DEFAULT_DATEFMT
 

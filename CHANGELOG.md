@@ -1,6 +1,7 @@
 # Change Log
 
 The change log is also available on the [GitHub Releases Page](https://github.com/rollbar/rollbar-agent/releases).
+
 **0.5.0**
 - Add Python3 support. See [#60](https://github.com/rollbar/rollbar-agent/pull/60)
 - Add config option `state_proto`. See [#60](https://github.com/rollbar/rollbar-agent/pull/60)

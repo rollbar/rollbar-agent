@@ -1,4 +1,7 @@
 include LICENSE
 include README.rst
-include rollbar-agent*
 include requirements.txt
+include rollbar-agent*
+exclude rollbar-agent.state
+exclude rollbar-agentc
+exclude pyproject.toml

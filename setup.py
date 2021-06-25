@@ -23,7 +23,7 @@ setup(
             ],
         )
     ],
-    version='0.5.0',
+    version='0.5.1',
     description='Rollbar server-side agent',
     long_description=README,
     author='Rollbar, Inc.',

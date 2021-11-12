@@ -12,7 +12,7 @@ Uninstall the ratchet-agent init.d service if installed:
     chkconfig --del ratchet-agent
     rm /etc/init.d/ratchet-agent
 
-Backup `rollbar-agent.conf` and rename your existing `ratchet-agent.conf` to be `rollbar-agent.conf`. **Note that Rollbar libraries now write to `.rollbar` files rather than `.ratchet` files**, so make sure you modify `ext_whitelist` to include rollbar files and `targets` to point to the right files.
+Backup `rollbar-agent.conf` and rename your existing `ratchet-agent.conf` to be `rollbar-agent.conf`. **Note that Rollbar libraries now write to `.rollbar` files rather than `.ratchet` files**, so make sure you modify `ext_safelist` to include rollbar files and `targets` to point to the right files.
 
 Install the new init.d script if desired:
 

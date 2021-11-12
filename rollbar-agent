@@ -756,7 +756,7 @@ def validate_config(config):
         print("CONFIGURATION ERRORS")
         for error in errors:
             print(error)
-        print()
+        print('')
         sys.exit(1)
 
 

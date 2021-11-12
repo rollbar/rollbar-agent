@@ -657,7 +657,7 @@ def parse_config(filename):
     def to_int(val):
         return int(val)
     def to_list(val):
-        return re.split(r'\s+', val)
+        return val.split()
     def to_dict(val):
         log_level_dict = ast.literal_eval(val)
         return log_level_dict

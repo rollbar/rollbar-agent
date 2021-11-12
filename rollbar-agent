@@ -19,6 +19,7 @@ import stat
 import sys
 import threading
 import time
+import warnings
 
 try:
     import configparser
@@ -727,6 +728,17 @@ def parse_config(filename):
         else:
             value = raw_value
         config['_global'][option_name] = value
+
+
+    def deprecate(deprecated, successor, scope):
+        if deprecated in config[scope] and config[scope][successor] == parsers[successor](defaults[successor]):
+            warnings.warn('%s is deprecated, use %s instead' % (deprecated, successor), DeprecationWarning)
+            config[scope][successor] = config[scope][deprecated]
+
+    for scope in config:
+        deprecate('ext_whitelist', 'ext_safelist', scope)
+        deprecate('ext_blacklist', 'ext_blocklist', scope)
+        deprecate('blacklist', 'blocklist', scope)
 
     return config
 

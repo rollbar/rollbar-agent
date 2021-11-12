@@ -1,6 +1,17 @@
 # Change Log
 
-The change log has moved to this repo's [GitHub Releases Page](https://github.com/rollbar/rollbar-agent/releases).
+The change log is also available on the [GitHub Releases Page](https://github.com/rollbar/rollbar-agent/releases).
+
+**0.5.1**
+- Fix PyPI artifacts
+
+**0.5.0**
+- Add Python3 support. See [#60](https://github.com/rollbar/rollbar-agent/pull/60)
+- Add config option `state_proto`. See [#60](https://github.com/rollbar/rollbar-agent/pull/60)
+- Remove support for building snap packages. See [#57](https://github.com/rollbar/rollbar-agent/issues/57)
+
+**0.4.4**
+- Improve error handling: See [#50](https://github.com/rollbar/rollbar-agent/pull/50)
 
 **0.4.3**
 - add content-type: application/json to post request [#39](https://github.com/rollbar/rollbar-agent/pull/39)

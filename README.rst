@@ -36,7 +36,7 @@ Requirements
 rollbar-agent requires:
 
 - A unix-like system (tested on Fedora and Ubuntu Linux and Mac OS X)
-- Python 2.6+
+- Python 3 or 2.6+
 - requests 0.13.1+ (will be installed by pip or setup.py, below)
 - a Rollbar_ account
 
@@ -54,7 +54,7 @@ Install rollbar-agent
 
 Once you've created and activated your virualenv, install the rollbar-agent code and configuration files
 into that environment using your preferred method below. Each method will install the rollbar-agent library
-and put the configuration and service start up files you'll need into the root directory of your virtualenv.  
+and put the configuration and service start up files you'll need into the root directory of your virtualenv.
 
 **Installing with pip**
 
@@ -71,9 +71,9 @@ If you're comfortable with Git::
 
 Or just grab the .tar.gz::
 
-    wget https://github.com/rollbar/rollbar-agent/archive/v0.4.3.tar.gz
-    tar -xzf v0.4.3
-    cd rollbar-agent-0.4.3
+    wget https://github.com/rollbar/rollbar-agent/archive/v0.5.1.tar.gz
+    tar -xzf v0.5.1
+    cd rollbar-agent-0.5.1
 
 Then install (may require sudo)::
 
@@ -109,7 +109,7 @@ On Fedora, add to chkconfig::
 
     chkconfig --add rollbar-agent
     chkconfig on rollbar-agent
-    
+
 On other systems, check your system's documentation for its equivalent of chkconfig.
 
 Now, start the service::

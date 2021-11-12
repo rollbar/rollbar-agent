@@ -6,3 +6,4 @@ dist/
 *.nix
 Pipfile
 Pipfile.lock
+.python-version

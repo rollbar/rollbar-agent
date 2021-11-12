@@ -4,9 +4,7 @@ rollbar-agent: agent to monitor log files and send notices to Rollbar
 """
 import ast
 import codecs
-import ConfigParser
 import copy
-import dbm
 import fnmatch
 import hashlib
 import json
@@ -22,11 +20,21 @@ import sys
 import threading
 import time
 
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
+
+try:
+    import dbm.ndbm as dbm
+except ImportError:
+    import dbm
+
 import requests
 
 log = logging.getLogger(__name__)
 
-VERSION = '0.4.3'
+VERSION = '0.5.1'
 
 DEFAULT_ENDPOINT = 'https://api.rollbar.com/api/1/item/'
 DEFAULT_TIMEOUT = 3  # in seconds
@@ -51,10 +59,20 @@ LOG_LEVEL = {
 
 terminal_character_attribute_pattern = re.compile(r'\x1b\[[0-9;]*m')
 
+
+def iteritems(_dict):
+    return _dict.items() if not hasattr(_dict, 'iteritems') else _dict.iteritems()
+
+
+def itervalues(_dict):
+    return _dict.values() if not hasattr(_dict, 'itervalues') else _dict.itervalues()
+
+
 def clean_line(app_config, line):
     if app_config.get('filter_chr_attr_sequences'):
         return terminal_character_attribute_pattern.sub("", line)
     return line
+
 
 def parse_timestamp(format, s):
     try:
@@ -140,7 +158,7 @@ def build_python_log_format_parser(format, datefmt):
     }
 
     regex_str = '^' + re.escape(format) + '$'
-    for key, val in known_keys.iteritems():
+    for key, val in iteritems(known_keys):
         search = re.escape(key)
         replacement = "(?P<%s>%s)" % val
         regex_str = regex_str.replace(search, replacement)
@@ -177,7 +195,7 @@ def datefmt_to_regex(datefmt):
         '%Z': r'[A-Z]{3}',  # time zone name
     }
 
-    for key, val in replacements.iteritems():
+    for key, val in iteritems(replacements):
         datefmt = datefmt.replace(key, val)
 
     # last: replace %% with %
@@ -210,10 +228,14 @@ class Processor(object):
     def send_payload(self, payload):
         # do immediate http post
         # in the future, will do this with batches and single separate thread
-        
-        if isinstance(payload, basestring):
+
+        if sys.version_info[0] >= 3:
+            payload_is_str = isinstance(payload, str)
+        else:
+            payload_is_str = isinstance(payload, basestring)
+        if payload_is_str:
             payload = payload.encode('utf8')
-        
+
         if options.dry_run:
             log.debug("Dry run; payload to send: %s", payload)
         else:
@@ -246,12 +268,12 @@ class RollbarFileProcessor(Processor):
             return
         try:
             payload = json.loads(line)
-            
+
             # use the agent's access token if one isn't defined for the loaded item
             if not payload.get('access_token'):
                 payload['access_token'] = self.app['config']['params.access_token']
                 line = json.dumps(payload)
-            
+
         except ValueError:
             log.warning("Could not process badly formatted line: %s", line)
             return
@@ -264,8 +286,12 @@ class LogFileProcessor(Processor):
     Processor for general log files - currently works reasonably well for paste/pylons log files.
     Some events we want will span multiple lines.
     """
-    # tuple of (pattern, strptime format)
-    _default_message_start_parser = (re.compile(r'(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),(\d+)?\s+(?P<level>[A-Z]+)\s+(?P<title>.*$)'), '%Y-%m-%d %H:%M:%S')
+    # dictionary of (pattern, strptime format and name)
+    _default_message_start_parser = {
+        'regex': re.compile(r'(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),(\d+)?\s+(?P<level>[A-Z]+)\s+(?P<title>.*$)'),
+        'datefmt': '%Y-%m-%d %H:%M:%S',
+        'name': 'default parser'
+    }
 
     def __init__(self, *args, **kw):
         super(LogFileProcessor, self).__init__(*args, **kw)
@@ -314,7 +340,7 @@ class LogFileProcessor(Processor):
 
             try:
                 scrub_regexes.append(re.compile(pattern))
-            except Exception, e:
+            except Exception as e:
                 log.warning("Could not compile regex pattern: %s" % pattern)
 
         for line in fp:
@@ -338,7 +364,7 @@ class LogFileProcessor(Processor):
             for regex in scrub_regexes:
                 try:
                     line = regex.sub('******', line)
-                except Exception, e:
+                except Exception as e:
                     log.warning("Could not use regex %s on line %s" % (regex, line))
 
             current_message['data'].append(line)
@@ -425,7 +451,7 @@ class ScannerThread(threading.Thread):
         self.config = config
 
         self.apps = {}
-        for app_name, app_config in config.iteritems():
+        for app_name, app_config in iteritems(config):
             if app_name.startswith('_'):
                 continue
             self.apps[app_name] = {
@@ -464,7 +490,7 @@ class ScannerThread(threading.Thread):
         self.save_state(state)
 
         try:
-            for app in self.apps.itervalues():
+            for app in itervalues(self.apps):
                 self.scan_app(app, apps_state)
         except:
             log.exception("Caught exception in ScannerThread.scan_all() loop")
@@ -482,7 +508,8 @@ class ScannerThread(threading.Thread):
                 # the 'c' flag will only create the file if it doesn't exist
                 # https://docs.python.org/2/library/anydbm.html#anydbm.open
                 return shelve.open(self.config['_global']['statefile'],
-                                   flag='n' if recreate else 'c')
+                                   flag='n' if recreate else 'c',
+                                   protocol=self.config['_global']['state_proto'])
             except dbm.error:
                 log.error("Could not open statefile for writing. "
                     "Perhaps the directory doesn't exist? "
@@ -571,7 +598,7 @@ def main_loop():
 
     # sleep until the thread is killed
     # have to sleep in a loop, instead of worker.join(), otherwise we'll never get the signals
-    while scanner.isAlive():
+    while scanner.is_alive():
         time.sleep(1)
 
     log.info("Shutdown complete")
@@ -609,6 +636,7 @@ def parse_config(filename):
 
     defaults = {
         'statefile': '/var/cache/rollbar-agent.state',
+        'state_proto': '0',
         'sleep_time': '10',
         'endpoint': DEFAULT_ENDPOINT,
         'timeout': str(DEFAULT_TIMEOUT),
@@ -638,6 +666,7 @@ def parse_config(filename):
         return val.lower() == 'true'
 
     parsers = {
+        'state_proto': to_int,
         'sleep_time': to_int,
         'timeout': to_int,
         'ext_safelist': to_list,
@@ -651,7 +680,10 @@ def parse_config(filename):
         'filter_chr_attr_sequences': to_bool,
     }
 
-    cp = ConfigParser.SafeConfigParser(defaults)
+    if sys.version_info >= (3, 2):
+        cp = configparser.ConfigParser(defaults)
+    else:
+        cp = configparser.SafeConfigParser(defaults)
     cp.read([filename])
 
     config = {'_formats': {}}
@@ -672,10 +704,10 @@ def parse_config(filename):
             format = {'name': format_name}
 
             format_type = cp.get(section_name, 'type')
-            format_spec = cp.get(section_name, 'format', True)
+            format_spec = cp.get(section_name, 'format', raw=True)
             try:
-                format_datefmt = cp.get(section_name, 'datefmt', True)
-            except ConfigParser.NoOptionError:
+                format_datefmt = cp.get(section_name, 'datefmt', raw=True)
+            except configparser.NoOptionError:
                 format_datefmt = DEFAULT_DATEFMT
 
             if format_type != 'python':
@@ -689,7 +721,7 @@ def parse_config(filename):
 
     global_config = cp.defaults()
     config['_global'] = {}
-    for option_name, raw_value in global_config.iteritems():
+    for option_name, raw_value in iteritems(global_config):
         if option_name in parsers:
             value = parsers[option_name](raw_value)
         else:
@@ -702,17 +734,17 @@ def parse_config(filename):
 def validate_config(config):
     errors = []
     required_vars = ['params.access_token', 'targets']
-    for app_name, app_config in config.iteritems():
+    for app_name, app_config in iteritems(config):
         if app_name.startswith('_'):
             continue
         for var_name in required_vars:
             if not app_config.get('params.access_token'):
                 errors.append("app:%s is missing required var %s" % (app_name, var_name))
     if errors:
-        print "CONFIGURATION ERRORS"
+        print("CONFIGURATION ERRORS")
         for error in errors:
-            print error
-        print
+            print(error)
+        print()
         sys.exit(1)
 
 

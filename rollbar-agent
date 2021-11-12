@@ -642,7 +642,7 @@ def parse_config(filename):
         'endpoint': DEFAULT_ENDPOINT,
         'timeout': str(DEFAULT_TIMEOUT),
         'root': os.getcwd(),
-        'ext_safelist': 'log, rollbar',
+        'ext_safelist': 'log rollbar',
         'ext_blocklist': '',
         'targets': '',
         'log_levels': str(LOG_LEVEL),

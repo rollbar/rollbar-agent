@@ -670,9 +670,12 @@ def parse_config(filename):
         'state_proto': to_int,
         'sleep_time': to_int,
         'timeout': to_int,
+        'ext_whitelist': to_list, # deprecated, to be removed in 1.x
         'ext_safelist': to_list,
+        'ext_blacklist': to_list, # deprecated, to be removed in 1.x
         'ext_blocklist': to_list,
         'targets': to_list,
+        'blacklist': to_list, # deprecated, to be removed in 1.x
         'blocklist': to_list,
         'log_levels': to_dict,
         'max_file_page': to_int,

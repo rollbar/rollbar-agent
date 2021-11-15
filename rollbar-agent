@@ -734,9 +734,12 @@ def parse_config(filename):
 
 
     def deprecate(deprecated, successor, scope):
-        if deprecated in config[scope] and config[scope][successor] == parsers[successor](defaults[successor]):
-            warnings.warn('%s is deprecated, use %s instead' % (deprecated, successor), DeprecationWarning)
-            config[scope][successor] = config[scope][deprecated]
+        if deprecated in config[scope]:
+            if config[scope][successor] == parsers[successor](defaults[successor]):
+                warnings.warn('%s is deprecated, use %s instead' % (deprecated, successor), DeprecationWarning)
+                config[scope][successor] = config[scope][deprecated]
+            else:
+                warnings.warn('%s is deprecated, %s is used instead' % (deprecated, successor), DeprecationWarning)
 
     for scope in config:
         deprecate('ext_whitelist', 'ext_safelist', scope)

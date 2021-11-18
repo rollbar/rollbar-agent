@@ -19,6 +19,7 @@ import stat
 import sys
 import threading
 import time
+import warnings
 
 try:
     import configparser
@@ -108,17 +109,17 @@ def should_process_file(app_config, filename):
     if not os.path.isfile(filename):
         return False
 
-    if filename in app_config['blacklist']:
+    if filename in app_config['blocklist']:
         return False
 
     if filename in app_config['targets']:
         return True
 
     ext = filename.split('.')[-1]
-    if app_config['ext_whitelist']:
-        return ext in app_config['ext_whitelist']
+    if app_config['ext_safelist']:
+        return ext in app_config['ext_safelist']
 
-    if ext in app_config['ext_blacklist']:
+    if ext in app_config['ext_blocklist']:
         return False
 
     return True
@@ -641,11 +642,11 @@ def parse_config(filename):
         'endpoint': DEFAULT_ENDPOINT,
         'timeout': str(DEFAULT_TIMEOUT),
         'root': os.getcwd(),
-        'ext_whitelist': 'log, rollbar',
-        'ext_blacklist': '',
+        'ext_safelist': 'log rollbar',
+        'ext_blocklist': '',
         'targets': '',
         'log_levels': str(LOG_LEVEL),
-        'blacklist': '',
+        'blocklist': '',
         'log_format.default': '',
         'log_format.patterns': '',
         'scrub_regex_patterns': '',
@@ -656,7 +657,7 @@ def parse_config(filename):
     def to_int(val):
         return int(val)
     def to_list(val):
-        return re.split(r'\s+', val)
+        return val.split()
     def to_dict(val):
         log_level_dict = ast.literal_eval(val)
         return log_level_dict
@@ -669,10 +670,13 @@ def parse_config(filename):
         'state_proto': to_int,
         'sleep_time': to_int,
         'timeout': to_int,
-        'ext_whitelist': to_list,
-        'ext_blacklist': to_list,
+        'ext_whitelist': to_list, # deprecated, to be removed in 1.x
+        'ext_safelist': to_list,
+        'ext_blacklist': to_list, # deprecated, to be removed in 1.x
+        'ext_blocklist': to_list,
         'targets': to_list,
-        'blacklist': to_list,
+        'blacklist': to_list, # deprecated, to be removed in 1.x
+        'blocklist': to_list,
         'log_levels': to_dict,
         'max_file_page': to_int,
         'min_log_level': to_log_level,
@@ -728,6 +732,20 @@ def parse_config(filename):
             value = raw_value
         config['_global'][option_name] = value
 
+
+    def deprecate(deprecated, successor, scope):
+        if deprecated in config[scope]:
+            if config[scope][successor] == parsers[successor](defaults[successor]):
+                warnings.warn('%s is deprecated, use %s instead' % (deprecated, successor), DeprecationWarning)
+                config[scope][successor] = config[scope][deprecated]
+            else:
+                warnings.warn('%s is deprecated, %s is used instead' % (deprecated, successor), DeprecationWarning)
+
+    for scope in config:
+        deprecate('ext_whitelist', 'ext_safelist', scope)
+        deprecate('ext_blacklist', 'ext_blocklist', scope)
+        deprecate('blacklist', 'blocklist', scope)
+
     return config
 
 
@@ -744,7 +762,7 @@ def validate_config(config):
         print("CONFIGURATION ERRORS")
         for error in errors:
             print(error)
-        print()
+        print('')
         sys.exit(1)
 
 
